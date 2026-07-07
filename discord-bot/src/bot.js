@@ -39,6 +39,30 @@ export async function createBot(token) {
   }
   console.log(`   ${eventFiles.length} Event(s) geladen.`);
 
-  await client.login(token);
+  try {
+    await client.login(token);
+  } catch (err) {
+    if (err?.code === 'TokenInvalid') printTokenDiagnostics(token);
+    throw err;
+  }
   return client;
+}
+
+// Gibt Hinweise zum Token aus – OHNE den Token selbst zu zeigen.
+function printTokenDiagnostics(token) {
+  const raw = token ?? '';
+  const trimmed = raw.trim();
+  const parts = trimmed.split('.');
+  console.error('\n🔎 Token-Diagnose (der Token selbst wird nicht angezeigt):');
+  console.error(`   Länge: ${trimmed.length} Zeichen (ein Bot-Token hat meist ~59–75)`);
+  console.error(`   Punkte-Teile: ${parts.length} (ein gültiger Bot-Token hat genau 3)`);
+  if (raw !== trimmed) console.error('   ⚠️  Enthält Leerzeichen/Zeilenumbruch am Anfang/Ende – bitte entfernen.');
+  if (/\s/.test(trimmed)) console.error('   ⚠️  Enthält ein Leerzeichen mitten drin – der Token wurde evtl. unvollständig kopiert.');
+  if (/^["'].*["']$/.test(trimmed)) console.error('   ⚠️  Steht in Anführungszeichen – bitte die " oder \' entfernen.');
+  if (/^\d+$/.test(trimmed)) console.error('   ⚠️  Besteht nur aus Zahlen – das ist die APPLICATION ID (CLIENT_ID), NICHT der Bot-Token!');
+  if (parts.length === 3 && !/\s/.test(trimmed) && raw === trimmed) {
+    console.error('   → Struktur sieht gültig aus. Wahrscheinlich wurde der Token zurückgesetzt.');
+    console.error('     Hol im Developer Portal unter Bot → "Reset Token" einen NEUEN und trag ihn ein.');
+  }
+  console.error('');
 }
