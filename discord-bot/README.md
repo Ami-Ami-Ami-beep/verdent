@@ -75,6 +75,25 @@ npm start
 1. Im Dashboard das Ticket-System einschalten, Kategorie + Team-Rolle + Log-Kanal wählen, speichern.
 2. Auf dem Server `/ticketpanel` in dem Kanal ausführen, in dem der Button erscheinen soll.
 
+## ☁️ Hosting auf einem Panel (Pelican / Pterodactyl)
+
+Der Bot läuft direkt auf Node.js-Panels. So geht's:
+
+1. **Alle Projektdateien** in den Server-Ordner (`/home/container`) hochladen –
+   also so, dass `index.js`, `package.json` und der `src/`-Ordner direkt im
+   Hauptverzeichnis liegen.
+2. **Startdatei / JS-File** im Panel auf `index.js` setzen (Standard). Es gibt
+   im Projekt-Root eine `index.js`, die den Bot aus `src/` startet.
+3. **Umgebungsvariablen** im Panel (Startup-Tab) statt einer `.env` setzen:
+   `DISCORD_TOKEN`, `CLIENT_ID`, optional `GUILD_ID`, `DASHBOARD_PASSWORD`,
+   `SESSION_SECRET`, `WEB_PORT`.
+4. **Starten.** Beim Start installiert das Panel automatisch die Abhängigkeiten
+   (`npm install`) und der Bot **registriert die Slash-Commands selbst**
+   (`AUTO_DEPLOY=1`). Ein separates `npm run deploy` ist nicht nötig.
+
+> Für das Dashboard einen Port im Panel freigeben und `WEB_PORT` auf dessen
+> Wert setzen (oft die vom Panel zugewiesene Server-Port-Variable).
+
 ## 🗂️ Projektstruktur
 ```
 discord-bot/
