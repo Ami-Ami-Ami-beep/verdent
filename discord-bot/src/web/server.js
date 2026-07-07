@@ -135,7 +135,7 @@ function sanitizeConfig(guildId, body = {}) {
     tickets: {
       enabled: bool(t.enabled, cur.tickets.enabled),
       categoryId: str(t.categoryId, cur.tickets.categoryId),
-      staffRoleId: str(t.staffRoleId, cur.tickets.staffRoleId),
+      staffRoleIds: list(t.staffRoleIds, cur.tickets.staffRoleIds),
       logChannelId: str(t.logChannelId, cur.tickets.logChannelId),
       panelMessage: str(t.panelMessage, cur.tickets.panelMessage).slice(0, 2000),
       welcomeMessage: str(t.welcomeMessage, cur.tickets.welcomeMessage).slice(0, 2000)

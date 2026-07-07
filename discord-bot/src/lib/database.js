@@ -59,6 +59,11 @@ db.exec(`
     role_id TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS ticket_staff_roles (
+    guild_id TEXT NOT NULL,
+    role_id TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS warnings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     guild_id TEXT NOT NULL,
@@ -84,13 +89,13 @@ db.exec(`
 `);
 
 // Spalten des guilds-Datensatzes → verschachteltes Konfig-Objekt.
-function rowToConfig(guildId, row, bannedWords, ignoredRoles) {
+function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
   return {
     guildId,
     tickets: {
       enabled: !!row.tickets_enabled,
       categoryId: row.tickets_category_id,
-      staffRoleId: row.tickets_staff_role_id,
+      staffRoleIds: staffRoles,
       logChannelId: row.tickets_log_channel_id,
       panelMessage: row.tickets_panel_message,
       welcomeMessage: row.tickets_welcome_message
@@ -140,13 +145,19 @@ const ensureGuild = db.prepare('INSERT OR IGNORE INTO guilds (guild_id) VALUES (
 const selectGuild = db.prepare('SELECT * FROM guilds WHERE guild_id = ?');
 const selectWords = db.prepare('SELECT word FROM automod_banned_words WHERE guild_id = ?');
 const selectRoles = db.prepare('SELECT role_id FROM automod_ignored_roles WHERE guild_id = ?');
+const selectStaffRoles = db.prepare('SELECT role_id FROM ticket_staff_roles WHERE guild_id = ?');
 
 export function getGuildConfig(guildId) {
   ensureGuild.run(guildId);
   const row = selectGuild.get(guildId);
   const words = selectWords.all(guildId).map((r) => r.word);
   const roles = selectRoles.all(guildId).map((r) => r.role_id);
-  return rowToConfig(guildId, row, words, roles);
+  let staffRoles = selectStaffRoles.all(guildId).map((r) => r.role_id);
+  // Migration: alte Einzelrolle (Spalte) übernehmen, falls die Liste noch leer ist.
+  if (staffRoles.length === 0 && row.tickets_staff_role_id) {
+    staffRoles = [row.tickets_staff_role_id];
+  }
+  return rowToConfig(guildId, row, words, roles, staffRoles);
 }
 
 const updateGuild = db.prepare(`
@@ -176,6 +187,8 @@ const deleteWords = db.prepare('DELETE FROM automod_banned_words WHERE guild_id 
 const insertWord = db.prepare('INSERT INTO automod_banned_words (guild_id, word) VALUES (?, ?)');
 const deleteRoles = db.prepare('DELETE FROM automod_ignored_roles WHERE guild_id = ?');
 const insertRole = db.prepare('INSERT INTO automod_ignored_roles (guild_id, role_id) VALUES (?, ?)');
+const deleteStaffRoles = db.prepare('DELETE FROM ticket_staff_roles WHERE guild_id = ?');
+const insertStaffRole = db.prepare('INSERT INTO ticket_staff_roles (guild_id, role_id) VALUES (?, ?)');
 
 export const saveGuildConfig = db.transaction((cfg) => {
   ensureGuild.run(cfg.guildId);
@@ -183,7 +196,7 @@ export const saveGuildConfig = db.transaction((cfg) => {
     guild_id: cfg.guildId,
     tickets_enabled: b(cfg.tickets.enabled),
     tickets_category_id: cfg.tickets.categoryId || '',
-    tickets_staff_role_id: cfg.tickets.staffRoleId || '',
+    tickets_staff_role_id: (cfg.tickets.staffRoleIds && cfg.tickets.staffRoleIds[0]) || '',
     tickets_log_channel_id: cfg.tickets.logChannelId || '',
     tickets_panel_message: cfg.tickets.panelMessage || '',
     tickets_welcome_message: cfg.tickets.welcomeMessage || '',
@@ -223,6 +236,11 @@ export const saveGuildConfig = db.transaction((cfg) => {
   for (const r of cfg.automod.ignoredRoleIds || []) {
     const role = String(r).trim();
     if (role) insertRole.run(cfg.guildId, role);
+  }
+  deleteStaffRoles.run(cfg.guildId);
+  for (const r of cfg.tickets.staffRoleIds || []) {
+    const role = String(r).trim();
+    if (role) insertStaffRole.run(cfg.guildId, role);
   }
 });
 

@@ -63,9 +63,10 @@ export async function handleOpenTicket(interaction) {
       ]
     }
   ];
-  if (cfg.tickets.staffRoleId) {
+  for (const staffRoleId of cfg.tickets.staffRoleIds || []) {
+    if (!staffRoleId) continue;
     overwrites.push({
-      id: cfg.tickets.staffRoleId,
+      id: staffRoleId,
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -106,8 +107,8 @@ export async function handleOpenTicket(interaction) {
       .setStyle(ButtonStyle.Danger)
   );
 
-  const mention = cfg.tickets.staffRoleId ? `<@&${cfg.tickets.staffRoleId}> ` : '';
-  await channel.send({ content: `${mention}<@${interaction.user.id}>`, embeds: [embed], components: [row] });
+  const mention = (cfg.tickets.staffRoleIds || []).filter(Boolean).map((id) => `<@&${id}>`).join(' ');
+  await channel.send({ content: `${mention} <@${interaction.user.id}>`.trim(), embeds: [embed], components: [row] });
 
   return interaction.editReply(`Dein Ticket wurde erstellt: <#${channel.id}>`);
 }

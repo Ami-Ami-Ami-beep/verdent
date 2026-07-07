@@ -42,8 +42,8 @@
             <label>Kategorie für Ticket-Kanäle
               <select data-path="tickets.categoryId" data-source="categories"></select>
             </label>
-            <label>Team-Rolle (darf Tickets sehen)
-              <select data-path="tickets.staffRoleId" data-source="roles"></select>
+            <label>Team-Rollen (dürfen Tickets sehen) – Mehrfachauswahl mit Strg/⌘
+              <select data-path="tickets.staffRoleIds" data-source="roles" multiple size="4"></select>
             </label>
             <label>Log-Kanal für Transkripte
               <select data-path="tickets.logChannelId" data-source="textChannels"></select>
