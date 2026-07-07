@@ -1,0 +1,14 @@
+# So einrichten:  Diese Datei zu  config.txt  kopieren (oder direkt eine neue
+# Datei "config.txt" anlegen) und deine eigenen Werte eintragen.
+# Der Bot liest automatisch config.txt (oder .env) beim Start.
+
+DISCORD_TOKEN=dein-bot-token
+CLIENT_ID=deine-application-id
+
+# Optional – Server-ID, damit Slash-Commands sofort erscheinen:
+GUILD_ID=
+
+# Optional – Einstellungen fürs Web-Dashboard:
+DASHBOARD_PASSWORD=admin
+SESSION_SECRET=bitte-einen-langen-zufaelligen-string-einsetzen
+WEB_PORT=3000

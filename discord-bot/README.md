@@ -84,9 +84,15 @@ Der Bot läuft direkt auf Node.js-Panels. So geht's:
    Hauptverzeichnis liegen.
 2. **Startdatei / JS-File** im Panel auf `index.js` setzen (Standard). Es gibt
    im Projekt-Root eine `index.js`, die den Bot aus `src/` startet.
-3. **Umgebungsvariablen** im Panel (Startup-Tab) statt einer `.env` setzen:
-   `DISCORD_TOKEN`, `CLIENT_ID`, optional `GUILD_ID`, `DASHBOARD_PASSWORD`,
-   `SESSION_SECRET`, `WEB_PORT`.
+3. **Konfiguration anlegen:** Am einfachsten im File Manager eine normale Datei
+   **`config.txt`** erstellen (keine versteckte Datei nötig!) und ausfüllen:
+   ```
+   DISCORD_TOKEN=dein-token
+   CLIENT_ID=deine-application-id
+   GUILD_ID=deine-server-id
+   ```
+   Der Bot liest `config.txt` (oder `.env`) automatisch beim Start.
+   Eine fertige Vorlage liegt als `config.example.txt` bei.
 4. **Starten.** Beim Start installiert das Panel automatisch die Abhängigkeiten
    (`npm install`) und der Bot **registriert die Slash-Commands selbst**
    (`AUTO_DEPLOY=1`). Ein separates `npm run deploy` ist nicht nötig.
