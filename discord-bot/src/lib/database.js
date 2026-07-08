@@ -139,6 +139,19 @@ db.exec(`
     position INTEGER NOT NULL,
     question TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS autoresponders (
+    guild_id TEXT NOT NULL,
+    trigger TEXT NOT NULL,
+    response TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS starboard_posts (
+    guild_id TEXT NOT NULL,
+    message_id TEXT NOT NULL,
+    star_message_id TEXT NOT NULL,
+    PRIMARY KEY (guild_id, message_id)
+  );
 `);
 
 // Neue Konfig-Spalten nachrüsten (für bereits bestehende Datenbanken).
@@ -158,7 +171,22 @@ function ensureColumns() {
     levels_announce: 'INTEGER DEFAULT 1',
     levels_announce_channel_id: "TEXT DEFAULT ''",
     suggestions_enabled: 'INTEGER DEFAULT 0',
-    suggestions_channel_id: "TEXT DEFAULT ''"
+    suggestions_channel_id: "TEXT DEFAULT ''",
+    live_enabled: 'INTEGER DEFAULT 0',
+    live_channel_id: "TEXT DEFAULT ''",
+    live_message: "TEXT DEFAULT '🔴 {user} ist jetzt LIVE! Schau vorbei: {url}'",
+    live_required_role_id: "TEXT DEFAULT ''",
+    starboard_enabled: 'INTEGER DEFAULT 0',
+    starboard_channel_id: "TEXT DEFAULT ''",
+    starboard_threshold: 'INTEGER DEFAULT 3',
+    starboard_emoji: "TEXT DEFAULT '⭐'",
+    counting_enabled: 'INTEGER DEFAULT 0',
+    counting_channel_id: "TEXT DEFAULT ''",
+    counting_current: 'INTEGER DEFAULT 0',
+    counting_last_user: "TEXT DEFAULT ''",
+    tempvoice_enabled: 'INTEGER DEFAULT 0',
+    tempvoice_hub_channel_id: "TEXT DEFAULT ''",
+    tempvoice_category_id: "TEXT DEFAULT ''"
   };
   for (const [name, def] of Object.entries(columns)) {
     if (!existing.has(name)) db.exec(`ALTER TABLE guilds ADD COLUMN ${name} ${def}`);
@@ -234,6 +262,28 @@ function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
       enabled: !!row.suggestions_enabled,
       channelId: row.suggestions_channel_id || ''
     },
+    live: {
+      enabled: !!row.live_enabled,
+      channelId: row.live_channel_id || '',
+      message: row.live_message || '🔴 {user} ist jetzt LIVE! {url}',
+      requiredRoleId: row.live_required_role_id || ''
+    },
+    starboard: {
+      enabled: !!row.starboard_enabled,
+      channelId: row.starboard_channel_id || '',
+      threshold: row.starboard_threshold ?? 3,
+      emoji: row.starboard_emoji || '⭐'
+    },
+    counting: {
+      enabled: !!row.counting_enabled,
+      channelId: row.counting_channel_id || ''
+    },
+    tempvoice: {
+      enabled: !!row.tempvoice_enabled,
+      hubChannelId: row.tempvoice_hub_channel_id || '',
+      categoryId: row.tempvoice_category_id || ''
+    },
+    autoresponders: [], // wird separat geladen
     selfRoles: [] // wird separat geladen
   };
 }
@@ -252,6 +302,7 @@ const selectTicketTypes = db.prepare('SELECT type_id, name, emoji, category_id, 
 const selectTicketTypeRoles = db.prepare('SELECT role_id FROM ticket_type_staff_roles WHERE guild_id = ? AND type_id = ?');
 const selectAppTypes = db.prepare('SELECT type_id, name, emoji, review_channel_id, accepted_role_id FROM application_types WHERE guild_id = ? ORDER BY position');
 const selectAppTypeQuestions = db.prepare('SELECT question FROM application_type_questions WHERE guild_id = ? AND type_id = ? ORDER BY position');
+const selectAutoresponders = db.prepare('SELECT trigger, response FROM autoresponders WHERE guild_id = ?');
 
 export function getGuildConfig(guildId) {
   ensureGuild.run(guildId);
@@ -260,6 +311,7 @@ export function getGuildConfig(guildId) {
   const roles = selectRoles.all(guildId).map((r) => r.role_id);
   const cfg = rowToConfig(guildId, row, words, roles, []);
   cfg.selfRoles = selectSelfRoles.all(guildId).map((r) => ({ roleId: r.role_id, label: r.label, emoji: r.emoji }));
+  cfg.autoresponders = selectAutoresponders.all(guildId).map((r) => ({ trigger: r.trigger, response: r.response }));
 
   // Ticket-Arten laden
   cfg.tickets.types = selectTicketTypes.all(guildId).map((t) => ({
@@ -338,7 +390,14 @@ const updateGuild = db.prepare(`
     levels_enabled=@levels_enabled, levels_xp_per_message=@levels_xp_per_message,
     levels_cooldown_seconds=@levels_cooldown_seconds, levels_announce=@levels_announce,
     levels_announce_channel_id=@levels_announce_channel_id,
-    suggestions_enabled=@suggestions_enabled, suggestions_channel_id=@suggestions_channel_id
+    suggestions_enabled=@suggestions_enabled, suggestions_channel_id=@suggestions_channel_id,
+    live_enabled=@live_enabled, live_channel_id=@live_channel_id,
+    live_message=@live_message, live_required_role_id=@live_required_role_id,
+    starboard_enabled=@starboard_enabled, starboard_channel_id=@starboard_channel_id,
+    starboard_threshold=@starboard_threshold, starboard_emoji=@starboard_emoji,
+    counting_enabled=@counting_enabled, counting_channel_id=@counting_channel_id,
+    tempvoice_enabled=@tempvoice_enabled, tempvoice_hub_channel_id=@tempvoice_hub_channel_id,
+    tempvoice_category_id=@tempvoice_category_id
   WHERE guild_id=@guild_id
 `);
 
@@ -360,6 +419,8 @@ const deleteAppTypes = db.prepare('DELETE FROM application_types WHERE guild_id 
 const deleteAppTypeQuestions = db.prepare('DELETE FROM application_type_questions WHERE guild_id = ?');
 const insertAppType = db.prepare('INSERT INTO application_types (guild_id, type_id, position, name, emoji, review_channel_id, accepted_role_id) VALUES (?,?,?,?,?,?,?)');
 const insertAppTypeQuestion = db.prepare('INSERT INTO application_type_questions (guild_id, type_id, position, question) VALUES (?,?,?,?)');
+const deleteAutoresponders = db.prepare('DELETE FROM autoresponders WHERE guild_id = ?');
+const insertAutoresponder = db.prepare('INSERT INTO autoresponders (guild_id, trigger, response) VALUES (?, ?, ?)');
 
 // Erzeugt eine stabile, eindeutige Art-ID aus dem Namen (oder zufällig).
 function makeTypeId(name, used) {
@@ -413,7 +474,20 @@ export const saveGuildConfig = db.transaction((cfg) => {
     levels_announce: b(cfg.levels?.announce),
     levels_announce_channel_id: cfg.levels?.announceChannelId || '',
     suggestions_enabled: b(cfg.suggestions?.enabled),
-    suggestions_channel_id: cfg.suggestions?.channelId || ''
+    suggestions_channel_id: cfg.suggestions?.channelId || '',
+    live_enabled: b(cfg.live?.enabled),
+    live_channel_id: cfg.live?.channelId || '',
+    live_message: cfg.live?.message || '',
+    live_required_role_id: cfg.live?.requiredRoleId || '',
+    starboard_enabled: b(cfg.starboard?.enabled),
+    starboard_channel_id: cfg.starboard?.channelId || '',
+    starboard_threshold: cfg.starboard?.threshold ?? 3,
+    starboard_emoji: cfg.starboard?.emoji || '⭐',
+    counting_enabled: b(cfg.counting?.enabled),
+    counting_channel_id: cfg.counting?.channelId || '',
+    tempvoice_enabled: b(cfg.tempvoice?.enabled),
+    tempvoice_hub_channel_id: cfg.tempvoice?.hubChannelId || '',
+    tempvoice_category_id: cfg.tempvoice?.categoryId || ''
   });
 
   deleteWords.run(cfg.guildId);
@@ -430,6 +504,13 @@ export const saveGuildConfig = db.transaction((cfg) => {
   for (const sr of cfg.selfRoles || []) {
     const role = String(sr.roleId || '').trim();
     if (role) insertSelfRole.run(cfg.guildId, role, String(sr.label || '').slice(0, 80), String(sr.emoji || '').slice(0, 40));
+  }
+
+  deleteAutoresponders.run(cfg.guildId);
+  for (const ar of cfg.autoresponders || []) {
+    const trigger = String(ar.trigger || '').trim().toLowerCase();
+    const response = String(ar.response || '').trim();
+    if (trigger && response) insertAutoresponder.run(cfg.guildId, trigger.slice(0, 100), response.slice(0, 1000));
   }
 
   // Ticket-Arten (mit Team-Rollen je Art)
@@ -574,6 +655,29 @@ export function hasOpenTicket(guildId, openerId, typeId = '') {
 
 export function closeTicket(channelId) {
   closeTicketStmt.run(channelId);
+}
+
+// ── Zählkanal-Status ─────────────────────────────────────
+const readCounting = db.prepare('SELECT counting_current AS current, counting_last_user AS lastUser FROM guilds WHERE guild_id = ?');
+const writeCounting = db.prepare('UPDATE guilds SET counting_current=?, counting_last_user=? WHERE guild_id=?');
+
+export function getCounting(guildId) {
+  ensureGuild.run(guildId);
+  return readCounting.get(guildId) || { current: 0, lastUser: '' };
+}
+export function setCounting(guildId, current, lastUser) {
+  writeCounting.run(current, lastUser || '', guildId);
+}
+
+// ── Starboard-Tracking ───────────────────────────────────
+const readStarPost = db.prepare('SELECT star_message_id AS id FROM starboard_posts WHERE guild_id=? AND message_id=?');
+const writeStarPost = db.prepare('INSERT OR REPLACE INTO starboard_posts (guild_id, message_id, star_message_id) VALUES (?, ?, ?)');
+
+export function getStarPost(guildId, messageId) {
+  return readStarPost.get(guildId, messageId)?.id || null;
+}
+export function setStarPost(guildId, messageId, starMessageId) {
+  writeStarPost.run(guildId, messageId, starMessageId);
 }
 
 export default db;

@@ -19,7 +19,12 @@ inklusive einer **einfachen Konfigurations-Website** (Dashboard). Alles wird in 
 | 📈 **Level-System** | XP fürs Schreiben, `/rank`, `/leaderboard`, Level-up-Nachrichten |
 | 💡 **Vorschläge** | `/suggest` postet in einen Kanal mit 👍/👎-Abstimmung |
 | ⚙️ **Moderation** | `/ban` `/kick` `/timeout` `/warn` `/warnings` `/clearwarnings` `/purge` `/lock` `/unlock` |
-| 🛠️ **Utility** | `/userinfo` `/serverinfo` `/avatar` `/ping` `/poll` `/slowmode` `/say` `/giveaway` |
+| 🔴 **Live-Benachrichtigung** | Meldet, wenn ein Mitglied zu streamen beginnt (Presence Intent nötig) |
+| ⭐ **Starboard** | Nachrichten mit genug ⭐-Reaktionen landen in einem Sammel-Kanal |
+| 🔢 **Zählkanal** | Mitglieder zählen abwechselnd hoch – Fehler bricht die Kette |
+| 💬 **Autoresponder** | Automatische Antworten auf bestimmte Auslöser-Wörter |
+| 🔊 **Temp-Sprachkanäle** | „Join to Create": eigener Voice-Channel, der sich selbst wieder löscht |
+| 🛠️ **Utility** | `/userinfo` `/serverinfo` `/avatar` `/ping` `/poll` `/slowmode` `/say` `/giveaway` `/remind` `/roll` `/8ball` `/coinflip` `/membercount` |
 | 🌐 **Dashboard** | Web-Oberfläche zum Ein-/Ausschalten und Konfigurieren aller Features |
 
 ## 📦 Voraussetzungen

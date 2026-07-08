@@ -235,6 +235,91 @@
             <p class="hint">Mitglieder reichen Vorschläge mit <code>/suggest</code> ein (mit 👍/👎-Abstimmung).</p>
           </div>
         </section>
+
+        <!-- Live-Benachrichtigung -->
+        <section class="card" data-feature="live">
+          <div class="card-head">
+            <h2>🔴 Live-Benachrichtigung</h2>
+            <label class="switch"><input type="checkbox" data-path="live.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Benachrichtigungs-Kanal
+              <select data-path="live.channelId" data-source="textChannels"></select>
+            </label>
+            <label>Nachricht
+              <textarea data-path="live.message" rows="2"></textarea>
+            </label>
+            <label>Nur diese Rolle melden (optional)
+              <select data-path="live.requiredRoleId" data-source="roles"></select>
+            </label>
+            <p class="hint">Platzhalter: <code>{user}</code> <code>{url}</code> <code>{game}</code>. ⚠️ Benötigt den <strong>Presence Intent</strong> (im Developer Portal aktivieren) und <code>PRESENCE_INTENT=1</code> in der config.txt.</p>
+          </div>
+        </section>
+
+        <!-- Starboard -->
+        <section class="card" data-feature="starboard">
+          <div class="card-head">
+            <h2>⭐ Starboard</h2>
+            <label class="switch"><input type="checkbox" data-path="starboard.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Starboard-Kanal
+              <select data-path="starboard.channelId" data-source="textChannels"></select>
+            </label>
+            <div class="row">
+              <label>Benötigte Reaktionen
+                <input type="number" data-path="starboard.threshold" min="1" max="100" />
+              </label>
+              <label>Emoji
+                <input type="text" data-path="starboard.emoji" maxlength="40" />
+              </label>
+            </div>
+            <p class="hint">Bekommt eine Nachricht genug Emoji-Reaktionen, wird sie in den Starboard-Kanal kopiert.</p>
+          </div>
+        </section>
+
+        <!-- Zählkanal -->
+        <section class="card" data-feature="counting">
+          <div class="card-head">
+            <h2>🔢 Zählkanal</h2>
+            <label class="switch"><input type="checkbox" data-path="counting.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Zähl-Kanal
+              <select data-path="counting.channelId" data-source="textChannels"></select>
+            </label>
+            <p class="hint">Mitglieder zählen abwechselnd hoch (1, 2, 3 …). Falsche Zahl oder zweimal dieselbe Person bricht die Kette.</p>
+          </div>
+        </section>
+
+        <!-- Temp-Voice -->
+        <section class="card" data-feature="tempvoice">
+          <div class="card-head">
+            <h2>🔊 Temp-Sprachkanäle</h2>
+            <label class="switch"><input type="checkbox" data-path="tempvoice.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Hub-Sprachkanal („Join to Create")
+              <select data-path="tempvoice.hubChannelId" data-source="voiceChannels"></select>
+            </label>
+            <label>Kategorie für neue Kanäle (optional)
+              <select data-path="tempvoice.categoryId" data-source="categories"></select>
+            </label>
+            <p class="hint">Wer den Hub-Kanal betritt, bekommt einen eigenen Sprachkanal, der beim Verlassen automatisch gelöscht wird.</p>
+          </div>
+        </section>
+
+        <!-- Autoresponder -->
+        <section class="card" data-feature="autoresponder-card">
+          <div class="card-head">
+            <h2>💬 Autoresponder</h2>
+          </div>
+          <div class="card-body">
+            <p class="hint">Automatische Antworten: enthält eine Nachricht das Auslöser-Wort, antwortet der Bot.</p>
+            <div id="autoresponder-editor"></div>
+            <button type="button" id="autoresponder-add" class="btn-ghost">+ Antwort hinzufügen</button>
+          </div>
+        </section>
       </div>
     </main>
 

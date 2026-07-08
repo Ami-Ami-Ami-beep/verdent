@@ -8,15 +8,24 @@ import { loadCommands } from './lib/loadCommands.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function createBot(token) {
+  const intents = [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,          // Beitritte/Austritte (Anti-Raid, Welcome, Autorole)
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,        // Nachrichteninhalt (AutoMod, Counting, Autoresponder)
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildVoiceStates,      // Temp-Voice (Join-to-Create)
+    GatewayIntentBits.GuildMessageReactions  // Starboard
+  ];
+  // Presence-Intent ist PRIVILEGIERT: nur aktivieren, wenn im Portal freigeschaltet
+  // UND PRESENCE_INTENT=1 gesetzt ist – sonst würde der Login fehlschlagen.
+  if (process.env.PRESENCE_INTENT === '1' || process.env.PRESENCE_INTENT === 'true') {
+    intents.push(GatewayIntentBits.GuildPresences); // Live-Benachrichtigung
+  }
+
   const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,     // Beitritte/Austritte (Anti-Raid, Welcome)
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent,   // Nachrichteninhalt (AutoMod)
-      GatewayIntentBits.GuildModeration
-    ],
-    partials: [Partials.Message, Partials.Channel, Partials.GuildMember]
+    intents,
+    partials: [Partials.Message, Partials.Channel, Partials.GuildMember, Partials.Reaction]
   });
 
   // Commands laden

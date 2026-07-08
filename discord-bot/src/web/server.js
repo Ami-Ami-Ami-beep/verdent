@@ -67,6 +67,9 @@ export function startWeb(client) {
     const textChannels = guild.channels.cache
       .filter((c) => c.type === ChannelType.GuildText)
       .map((c) => ({ id: c.id, name: c.name }));
+    const voiceChannels = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildVoice)
+      .map((c) => ({ id: c.id, name: c.name }));
     const categories = guild.channels.cache
       .filter((c) => c.type === ChannelType.GuildCategory)
       .map((c) => ({ id: c.id, name: c.name }));
@@ -74,7 +77,7 @@ export function startWeb(client) {
       .filter((r) => r.id !== guild.id) // @everyone weglassen
       .map((r) => ({ id: r.id, name: r.name }));
 
-    res.json({ name: guild.name, textChannels, categories, roles });
+    res.json({ name: guild.name, textChannels, voiceChannels, categories, roles });
   });
 
   // ── Konfiguration lesen/schreiben ──────────────────────
@@ -131,6 +134,10 @@ function sanitizeConfig(guildId, body = {}) {
   const ar = body.autorole || {};
   const lv = body.levels || {};
   const sg = body.suggestions || {};
+  const li = body.live || {};
+  const sb = body.starboard || {};
+  const ct = body.counting || {};
+  const tv = body.tempvoice || {};
 
   const validActions = ['kick', 'ban', 'lockdown', 'alert'];
 
@@ -221,6 +228,33 @@ function sanitizeConfig(guildId, body = {}) {
       enabled: bool(sg.enabled, cur.suggestions.enabled),
       channelId: str(sg.channelId, cur.suggestions.channelId)
     },
+    live: {
+      enabled: bool(li.enabled, cur.live.enabled),
+      channelId: str(li.channelId, cur.live.channelId),
+      message: str(li.message, cur.live.message).slice(0, 2000),
+      requiredRoleId: str(li.requiredRoleId, cur.live.requiredRoleId)
+    },
+    starboard: {
+      enabled: bool(sb.enabled, cur.starboard.enabled),
+      channelId: str(sb.channelId, cur.starboard.channelId),
+      threshold: int(sb.threshold, cur.starboard.threshold, 1, 100),
+      emoji: str(sb.emoji, cur.starboard.emoji).slice(0, 40) || '⭐'
+    },
+    counting: {
+      enabled: bool(ct.enabled, cur.counting.enabled),
+      channelId: str(ct.channelId, cur.counting.channelId)
+    },
+    tempvoice: {
+      enabled: bool(tv.enabled, cur.tempvoice.enabled),
+      hubChannelId: str(tv.hubChannelId, cur.tempvoice.hubChannelId),
+      categoryId: str(tv.categoryId, cur.tempvoice.categoryId)
+    },
+    autoresponders: Array.isArray(body.autoresponders)
+      ? body.autoresponders
+          .filter((a) => a && String(a.trigger || '').trim() && String(a.response || '').trim())
+          .slice(0, 50)
+          .map((a) => ({ trigger: String(a.trigger).slice(0, 100), response: String(a.response).slice(0, 1000) }))
+      : cur.autoresponders,
     selfRoles: Array.isArray(body.selfRoles)
       ? body.selfRoles
           .filter((r) => r && typeof r.roleId === 'string' && r.roleId.trim())

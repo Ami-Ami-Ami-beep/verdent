@@ -62,6 +62,11 @@ $('#app-type-add').addEventListener('click', () => {
   markDirty();
 });
 
+$('#autoresponder-add').addEventListener('click', () => {
+  addAutoresponderRow();
+  markDirty();
+});
+
 // ── Server-Auswahl ───────────────────────────────────────
 async function loadGuilds() {
   const guilds = await api('/api/guilds');
@@ -148,6 +153,7 @@ function fillForm() {
   renderSelfRoles();
   renderTicketTypes();
   renderAppTypes();
+  renderAutoresponders();
   updateDisabledCards();
 }
 
@@ -173,6 +179,7 @@ function readForm() {
   cfg.selfRoles = readSelfRoles();
   cfg.tickets.types = readTicketTypes();
   cfg.applications.types = readAppTypes();
+  cfg.autoresponders = readAutoresponders();
   return cfg;
 }
 
@@ -318,6 +325,33 @@ function readSelfRoles() {
       emoji: row.querySelector('.sr-emoji').value.trim()
     }))
     .filter((r) => r.roleId);
+}
+
+// ── Autoresponder-Editor ─────────────────────────────────
+function addAutoresponderRow(entry = { trigger: '', response: '' }) {
+  const editor = $('#autoresponder-editor');
+  const row = document.createElement('div');
+  row.className = 'ar-row';
+  row.innerHTML = `
+    <input class="ar-trigger" placeholder="Auslöser-Wort" maxlength="100" value="${esc(entry.trigger)}" />
+    <input class="ar-response" placeholder="Antwort des Bots" maxlength="1000" value="${esc(entry.response)}" />
+    <button type="button" class="btn-ghost ar-remove">✕</button>`;
+  row.querySelector('.ar-remove').addEventListener('click', () => { row.remove(); markDirty(); });
+  editor.appendChild(row);
+}
+function renderAutoresponders() {
+  const editor = $('#autoresponder-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  (currentConfig.autoresponders || []).forEach((a) => addAutoresponderRow(a));
+}
+function readAutoresponders() {
+  return [...document.querySelectorAll('.ar-row')]
+    .map((row) => ({
+      trigger: row.querySelector('.ar-trigger').value.trim(),
+      response: row.querySelector('.ar-response').value.trim()
+    }))
+    .filter((a) => a.trigger && a.response);
 }
 
 // ── Änderungen erkennen / speichern ──────────────────────

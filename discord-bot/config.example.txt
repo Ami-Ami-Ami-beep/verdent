@@ -12,3 +12,7 @@ GUILD_ID=
 DASHBOARD_PASSWORD=admin
 SESSION_SECRET=bitte-einen-langen-zufaelligen-string-einsetzen
 WEB_PORT=3000
+
+# Optional – für die Live-Benachrichtigung: auf 1 setzen UND im Developer Portal
+# den "Presence Intent" aktivieren. Sonst startet der Bot ggf. nicht!
+PRESENCE_INTENT=0
