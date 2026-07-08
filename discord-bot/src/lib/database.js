@@ -152,6 +152,13 @@ db.exec(`
     star_message_id TEXT NOT NULL,
     PRIMARY KEY (guild_id, message_id)
   );
+
+  CREATE TABLE IF NOT EXISTS bots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    label TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Neue Konfig-Spalten nachrüsten (für bereits bestehende Datenbanken).
@@ -678,6 +685,24 @@ export function getStarPost(guildId, messageId) {
 }
 export function setStarPost(guildId, messageId, starMessageId) {
   writeStarPost.run(guildId, messageId, starMessageId);
+}
+
+// ── Bots (Multi-Bot-Verwaltung) ──────────────────────────
+const insertBot = db.prepare('INSERT OR IGNORE INTO bots (token, label, created_at) VALUES (?, ?, ?)');
+const selectBotByToken = db.prepare('SELECT id FROM bots WHERE token = ?');
+const selectBots = db.prepare('SELECT id, token, label FROM bots ORDER BY id');
+const deleteBotStmt = db.prepare('DELETE FROM bots WHERE id = ?');
+
+/** Speichert einen Bot-Token (Duplikate werden ignoriert) und gibt die ID zurück. */
+export function addBotToken(token, label = '') {
+  insertBot.run(token, label, new Date().toISOString());
+  return selectBotByToken.get(token).id;
+}
+export function listBots() {
+  return selectBots.all();
+}
+export function removeBotToken(id) {
+  deleteBotStmt.run(id);
 }
 
 export default db;

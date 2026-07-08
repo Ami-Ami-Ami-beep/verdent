@@ -67,6 +67,72 @@ $('#autoresponder-add').addEventListener('click', () => {
   markDirty();
 });
 
+// ── Bot-Verwaltung (oben rechts) ─────────────────────────
+$('#bots-btn').addEventListener('click', async () => {
+  $('#bots-modal').classList.remove('hidden');
+  await loadBots();
+});
+$('#bots-close').addEventListener('click', () => $('#bots-modal').classList.add('hidden'));
+$('#bots-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'bots-modal') $('#bots-modal').classList.add('hidden');
+});
+
+async function loadBots() {
+  const list = $('#bots-list');
+  list.innerHTML = '<div class="bots-empty">Lade …</div>';
+  try {
+    const bots = await api('/api/bots');
+    if (!bots.length) {
+      list.innerHTML = '<div class="bots-empty">Noch keine Bots. Füge unten einen hinzu. 👇</div>';
+      return;
+    }
+    list.innerHTML = '';
+    bots.forEach((b) => {
+      const row = document.createElement('div');
+      row.className = 'bot-row';
+      const name = b.tag ? esc(b.tag) : b.label ? esc(b.label) : 'Bot #' + b.id;
+      row.innerHTML = `
+        <span class="bot-dot ${b.online ? 'on' : 'off'}"></span>
+        <div class="bot-info">
+          <div class="bot-name">${name}</div>
+          <div class="bot-sub">${b.online ? 'Online' : 'Offline'} · Token ${b.tokenHint}</div>
+        </div>
+        <button class="btn-ghost bot-remove">Entfernen</button>`;
+      row.querySelector('.bot-remove').addEventListener('click', async () => {
+        if (!confirm('Diesen Bot wirklich entfernen und stoppen?')) return;
+        await api('/api/bots/' + b.id, { method: 'DELETE' }).catch(() => {});
+        await loadBots();
+        await loadGuilds();
+      });
+      list.appendChild(row);
+    });
+  } catch (e) {
+    list.innerHTML = '<div class="bots-empty">Fehler: ' + e.message + '</div>';
+  }
+}
+
+$('#bot-add-btn').addEventListener('click', async () => {
+  const token = $('#bot-token').value.trim();
+  const label = $('#bot-label').value.trim();
+  const status = $('#bot-add-status');
+  const btn = $('#bot-add-btn');
+  if (!token) { status.textContent = 'Bitte einen Token eingeben.'; return; }
+  btn.disabled = true;
+  status.textContent = '⏳ Bot wird gestartet …';
+  try {
+    const res = await api('/api/bots', { method: 'POST', body: JSON.stringify({ token, label }) });
+    status.textContent = '✅ Hinzugefügt: ' + (res.bot.tag || 'Bot #' + res.bot.id);
+    $('#bot-token').value = '';
+    $('#bot-label').value = '';
+    await loadBots();
+    await loadGuilds();
+  } catch (e) {
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 // ── Server-Auswahl ───────────────────────────────────────
 async function loadGuilds() {
   const guilds = await api('/api/guilds');

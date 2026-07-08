@@ -40,6 +40,7 @@
           <span class="header-sub">Wähle einen Server und passe die Funktionen an</span>
         </div>
         <div class="header-right">
+          <button id="bots-btn" class="btn-primary">🤖 Bots</button>
           <select id="guild-select"></select>
           <button id="logout" class="btn-ghost">Abmelden</button>
         </div>
@@ -348,6 +349,28 @@
     <div id="save-bar" class="save-bar hidden">
       <span id="save-status">Es gibt ungespeicherte Änderungen.</span>
       <button id="save-btn">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Bot-Verwaltung (Modal) -->
+  <div id="bots-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>🤖 Bots verwalten</h2>
+        <button id="bots-close" class="btn-ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="bots-list" class="bots-list"></div>
+
+        <div class="bot-add">
+          <h3>Neuen Bot hinzufügen</h3>
+          <p class="hint">Füge den <strong>Bot-Token</strong> aus dem Developer Portal ein (Bot → Reset Token → Copy). Der Bot startet sofort.</p>
+          <input type="text" id="bot-label" placeholder="Name (optional, nur zur Anzeige)" maxlength="60" />
+          <input type="password" id="bot-token" placeholder="Bot-Token einfügen …" autocomplete="off" />
+          <button id="bot-add-btn" class="btn-primary">Bot hinzufügen &amp; starten</button>
+          <div id="bot-add-status" class="bot-add-status"></div>
+        </div>
+      </div>
     </div>
   </div>
 

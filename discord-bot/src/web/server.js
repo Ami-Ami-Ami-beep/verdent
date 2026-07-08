@@ -9,7 +9,7 @@ import { getGuildConfig, saveGuildConfig } from '../lib/database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export function startWeb(client) {
+export function startWeb(manager) {
   const port = process.env.WEB_PORT || 3000;
   const password = process.env.DASHBOARD_PASSWORD || 'admin';
   const secret = process.env.SESSION_SECRET || 'change-me';
@@ -48,9 +48,34 @@ export function startWeb(client) {
     res.json({ authed: !!req.session?.authed });
   });
 
+  // ── Bots verwalten ─────────────────────────────────────
+  app.get('/api/bots', requireAuth, (req, res) => {
+    res.json(manager.listRunningBots());
+  });
+
+  app.post('/api/bots', requireAuth, async (req, res) => {
+    const token = String(req.body?.token || '').trim();
+    const label = String(req.body?.label || '').slice(0, 60);
+    if (!token) return res.status(400).json({ error: 'Bitte einen Bot-Token eingeben.' });
+    try {
+      const bot = await manager.addBot(token, label);
+      res.json({ ok: true, bot });
+    } catch (err) {
+      const msg = /token/i.test(err.message)
+        ? 'Der Token ist ungültig. Prüfe ihn im Developer Portal (Bot → Reset Token).'
+        : `Bot konnte nicht gestartet werden: ${err.message}`;
+      res.status(400).json({ error: msg });
+    }
+  });
+
+  app.delete('/api/bots/:id', requireAuth, async (req, res) => {
+    await manager.removeBot(Number(req.params.id));
+    res.json({ ok: true });
+  });
+
   // ── Server-Liste ───────────────────────────────────────
   app.get('/api/guilds', requireAuth, (req, res) => {
-    const guilds = client.guilds.cache.map((g) => ({
+    const guilds = manager.allGuilds().map((g) => ({
       id: g.id,
       name: g.name,
       icon: g.iconURL({ size: 64 }) || null,
@@ -61,7 +86,7 @@ export function startWeb(client) {
 
   // Kanäle, Kategorien und Rollen eines Servers (für die Auswahlfelder).
   app.get('/api/guilds/:id/meta', requireAuth, (req, res) => {
-    const guild = client.guilds.cache.get(req.params.id);
+    const guild = manager.findGuild(req.params.id);
     if (!guild) return res.status(404).json({ error: 'Server nicht gefunden' });
 
     const textChannels = guild.channels.cache
@@ -82,14 +107,14 @@ export function startWeb(client) {
 
   // ── Konfiguration lesen/schreiben ──────────────────────
   app.get('/api/guilds/:id/config', requireAuth, (req, res) => {
-    if (!client.guilds.cache.has(req.params.id)) {
+    if (!manager.findGuild(req.params.id)) {
       return res.status(404).json({ error: 'Server nicht gefunden' });
     }
     res.json(getGuildConfig(req.params.id));
   });
 
   app.post('/api/guilds/:id/config', requireAuth, (req, res) => {
-    if (!client.guilds.cache.has(req.params.id)) {
+    if (!manager.findGuild(req.params.id)) {
       return res.status(404).json({ error: 'Server nicht gefunden' });
     }
     try {

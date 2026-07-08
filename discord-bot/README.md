@@ -25,6 +25,7 @@ inklusive einer **einfachen Konfigurations-Website** (Dashboard). Alles wird in 
 | 💬 **Autoresponder** | Automatische Antworten auf bestimmte Auslöser-Wörter |
 | 🔊 **Temp-Sprachkanäle** | „Join to Create": eigener Voice-Channel, der sich selbst wieder löscht |
 | 🛠️ **Utility** | `/userinfo` `/serverinfo` `/avatar` `/ping` `/poll` `/slowmode` `/say` `/giveaway` `/remind` `/roll` `/8ball` `/coinflip` `/membercount` |
+| 🤖 **Multi-Bot** | Im Dashboard oben rechts weitere Bots per Token hinzufügen – sie starten sofort |
 | 🌐 **Dashboard** | Web-Oberfläche zum Ein-/Ausschalten und Konfigurieren aller Features |
 
 ## 📦 Voraussetzungen
