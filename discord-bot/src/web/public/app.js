@@ -52,6 +52,16 @@ $('#selfrole-add').addEventListener('click', () => {
   markDirty();
 });
 
+$('#ticket-type-add').addEventListener('click', () => {
+  addTicketTypeBlock();
+  markDirty();
+});
+
+$('#app-type-add').addEventListener('click', () => {
+  addAppTypeBlock();
+  markDirty();
+});
+
 // ── Server-Auswahl ───────────────────────────────────────
 async function loadGuilds() {
   const guilds = await api('/api/guilds');
@@ -136,6 +146,8 @@ function fillForm() {
     }
   });
   renderSelfRoles();
+  renderTicketTypes();
+  renderAppTypes();
   updateDisabledCards();
 }
 
@@ -159,6 +171,8 @@ function readForm() {
     setPath(cfg, el.dataset.path, value);
   });
   cfg.selfRoles = readSelfRoles();
+  cfg.tickets.types = readTicketTypes();
+  cfg.applications.types = readAppTypes();
   return cfg;
 }
 
@@ -171,12 +185,106 @@ function updateDisabledCards() {
   });
 }
 
-// ── Selbstrollen-Editor ──────────────────────────────────
+// ── Optionen-Helfer für dynamische Editoren ──────────────
+const esc = (s) => String(s || '').replace(/"/g, '&quot;');
+
 function roleOptionsHtml(selectedId) {
   const roles = currentMeta?.roles || [];
   return ['<option value="">— Rolle wählen —</option>']
     .concat(roles.map((r) => `<option value="${r.id}" ${r.id === selectedId ? 'selected' : ''}>@${r.name}</option>`))
     .join('');
+}
+function channelOptionsHtml(selectedId) {
+  const chans = currentMeta?.textChannels || [];
+  return ['<option value="">— Kanal wählen —</option>']
+    .concat(chans.map((c) => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>#${c.name}</option>`))
+    .join('');
+}
+function categoryOptionsHtml(selectedId) {
+  const cats = currentMeta?.categories || [];
+  return ['<option value="">— keine Kategorie —</option>']
+    .concat(cats.map((c) => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`))
+    .join('');
+}
+function roleMultiOptionsHtml(selectedIds = []) {
+  const set = new Set(selectedIds);
+  return (currentMeta?.roles || [])
+    .map((r) => `<option value="${r.id}" ${set.has(r.id) ? 'selected' : ''}>@${r.name}</option>`)
+    .join('');
+}
+
+// ── Ticket-Arten-Editor ──────────────────────────────────
+function addTicketTypeBlock(entry = {}) {
+  const editor = $('#ticket-types-editor');
+  const block = document.createElement('div');
+  block.className = 'type-block';
+  block.dataset.id = entry.id || '';
+  block.innerHTML = `
+    <div class="type-head">
+      <input class="tt-emoji" placeholder="🎫" maxlength="40" value="${esc(entry.emoji)}" />
+      <input class="tt-name" placeholder="Name der Art (z. B. Support)" maxlength="60" value="${esc(entry.name)}" />
+      <button type="button" class="btn-ghost tt-remove">✕</button>
+    </div>
+    <label>Kategorie<select class="tt-category">${categoryOptionsHtml(entry.categoryId)}</select></label>
+    <label>Team-Rollen (Mehrfachauswahl)<select class="tt-roles" multiple size="3">${roleMultiOptionsHtml(entry.staffRoleIds)}</select></label>
+    <label>Begrüßung im Ticket<textarea class="tt-welcome" rows="2">${esc(entry.welcomeMessage)}</textarea></label>`;
+  block.querySelector('.tt-remove').addEventListener('click', () => { block.remove(); markDirty(); });
+  editor.appendChild(block);
+}
+function renderTicketTypes() {
+  const editor = $('#ticket-types-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  (currentConfig.tickets?.types || []).forEach((t) => addTicketTypeBlock(t));
+}
+function readTicketTypes() {
+  return [...document.querySelectorAll('#ticket-types-editor .type-block')]
+    .map((b) => ({
+      id: b.dataset.id,
+      name: b.querySelector('.tt-name').value.trim(),
+      emoji: b.querySelector('.tt-emoji').value.trim(),
+      categoryId: b.querySelector('.tt-category').value,
+      staffRoleIds: [...b.querySelector('.tt-roles').selectedOptions].map((o) => o.value),
+      welcomeMessage: b.querySelector('.tt-welcome').value
+    }))
+    .filter((t) => t.name);
+}
+
+// ── Bewerbungs-Arten-Editor ──────────────────────────────
+function addAppTypeBlock(entry = {}) {
+  const editor = $('#app-types-editor');
+  const block = document.createElement('div');
+  block.className = 'type-block';
+  block.dataset.id = entry.id || '';
+  block.innerHTML = `
+    <div class="type-head">
+      <input class="at-emoji" placeholder="📝" maxlength="40" value="${esc(entry.emoji)}" />
+      <input class="at-name" placeholder="Name der Art (z. B. Moderator)" maxlength="60" value="${esc(entry.name)}" />
+      <button type="button" class="btn-ghost at-remove">✕</button>
+    </div>
+    <label>Review-Kanal<select class="at-review">${channelOptionsHtml(entry.reviewChannelId)}</select></label>
+    <label>Rolle bei Annahme (optional)<select class="at-role">${roleOptionsHtml(entry.acceptedRoleId)}</select></label>
+    <label>Fragen (eine pro Zeile, max. 5)<textarea class="at-questions" rows="3" placeholder="Wie alt bist du?&#10;Warum du?">${esc((entry.questions || []).join('\n'))}</textarea></label>`;
+  block.querySelector('.at-remove').addEventListener('click', () => { block.remove(); markDirty(); });
+  editor.appendChild(block);
+}
+function renderAppTypes() {
+  const editor = $('#app-types-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  (currentConfig.applications?.types || []).forEach((t) => addAppTypeBlock(t));
+}
+function readAppTypes() {
+  return [...document.querySelectorAll('#app-types-editor .type-block')]
+    .map((b) => ({
+      id: b.dataset.id,
+      name: b.querySelector('.at-name').value.trim(),
+      emoji: b.querySelector('.at-emoji').value.trim(),
+      reviewChannelId: b.querySelector('.at-review').value,
+      acceptedRoleId: b.querySelector('.at-role').value,
+      questions: b.querySelector('.at-questions').value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 5)
+    }))
+    .filter((t) => t.name);
 }
 
 function addSelfRoleRow(entry = { roleId: '', label: '', emoji: '' }) {

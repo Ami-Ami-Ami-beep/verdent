@@ -16,6 +16,12 @@ export default {
         flags: MessageFlags.Ephemeral
       });
     }
+    if (!cfg.tickets.types || cfg.tickets.types.length === 0) {
+      return interaction.reply({
+        content: 'Es ist noch keine Ticket-Art konfiguriert. Füge im Dashboard mindestens eine hinzu.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
     await interaction.channel.send(buildTicketPanel(cfg));
     await interaction.reply({ content: '✅ Ticket-Panel wurde gepostet.', flags: MessageFlags.Ephemeral });
   }

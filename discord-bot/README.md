@@ -8,12 +8,12 @@ inklusive einer **einfachen Konfigurations-Website** (Dashboard). Alles wird in 
 
 | Feature | Beschreibung |
 |---|---|
-| 🎫 **Tickets** | Panel mit Button, private Ticket-Kanäle, Team-Rolle, Transkript beim Schließen |
+| 🎫 **Tickets** | **Mehrere Ticket-Arten** (eigener Button, Kategorie, Team-Rollen, Begrüßung), private Kanäle, Transkript beim Schließen |
 | 🛡️ **Anti-Raid** | Erkennt Beitrittswellen, Aktion wählbar (Kick/Ban/Lockdown/Alarm), Mindest-Kontoalter |
 | 🔨 **AutoMod** | Einladungslinks, Spam, Massen-Erwähnungen, verbotene Wörter |
 | 👋 **Willkommen** | Begrüßungs- und Abschiedsnachrichten mit Platzhaltern |
 | 📋 **Logging** | Gelöschte/bearbeitete Nachrichten, Beitritte/Austritte, Mod-Aktionen |
-| 📝 **Bewerbungen** | Panel-Button → Fragen-Formular → Review-Kanal mit Annehmen/Ablehnen + Rolle & DM |
+| 📝 **Bewerbungen** | **Mehrere Bewerbungs-Arten** (eigene Fragen, Review-Kanal, Rolle) → Formular → Annehmen/Ablehnen + DM |
 | 🎭 **Selbstrollen** | Button-Panel, mit dem Mitglieder sich Rollen selbst geben/nehmen |
 | ⭐ **Autorole** | Automatische Rolle beim Serverbeitritt |
 | 📈 **Level-System** | XP fürs Schreiben, `/rank`, `/leaderboard`, Level-up-Nachrichten |

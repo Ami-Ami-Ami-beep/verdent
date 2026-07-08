@@ -106,6 +106,39 @@ db.exec(`
     position INTEGER NOT NULL,
     question TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS ticket_types (
+    guild_id TEXT NOT NULL,
+    type_id TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    name TEXT DEFAULT 'Ticket',
+    emoji TEXT DEFAULT '🎫',
+    category_id TEXT DEFAULT '',
+    welcome_message TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS ticket_type_staff_roles (
+    guild_id TEXT NOT NULL,
+    type_id TEXT NOT NULL,
+    role_id TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS application_types (
+    guild_id TEXT NOT NULL,
+    type_id TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    name TEXT DEFAULT 'Bewerbung',
+    emoji TEXT DEFAULT '📝',
+    review_channel_id TEXT DEFAULT '',
+    accepted_role_id TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS application_type_questions (
+    guild_id TEXT NOT NULL,
+    type_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    question TEXT NOT NULL
+  );
 `);
 
 // Neue Konfig-Spalten nachrüsten (für bereits bestehende Datenbanken).
@@ -130,6 +163,9 @@ function ensureColumns() {
   for (const [name, def] of Object.entries(columns)) {
     if (!existing.has(name)) db.exec(`ALTER TABLE guilds ADD COLUMN ${name} ${def}`);
   }
+  // Offene Tickets: Ticket-Art nachrüsten.
+  const ticketCols = new Set(db.prepare('PRAGMA table_info(tickets)').all().map((c) => c.name));
+  if (!ticketCols.has('type_id')) db.exec("ALTER TABLE tickets ADD COLUMN type_id TEXT DEFAULT ''");
 }
 ensureColumns();
 
@@ -139,11 +175,9 @@ function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
     guildId,
     tickets: {
       enabled: !!row.tickets_enabled,
-      categoryId: row.tickets_category_id,
-      staffRoleIds: staffRoles,
       logChannelId: row.tickets_log_channel_id,
       panelMessage: row.tickets_panel_message,
-      welcomeMessage: row.tickets_welcome_message
+      types: [] // wird separat geladen
     },
     antiraid: {
       enabled: !!row.antiraid_enabled,
@@ -182,10 +216,8 @@ function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
     },
     applications: {
       enabled: !!row.applications_enabled,
-      reviewChannelId: row.applications_review_channel_id || '',
-      acceptedRoleId: row.applications_accepted_role_id || '',
       panelMessage: row.applications_panel_message || '',
-      questions: [] // wird separat geladen
+      types: [] // wird separat geladen
     },
     autorole: {
       enabled: !!row.autorole_enabled,
@@ -216,28 +248,75 @@ const selectRoles = db.prepare('SELECT role_id FROM automod_ignored_roles WHERE 
 const selectStaffRoles = db.prepare('SELECT role_id FROM ticket_staff_roles WHERE guild_id = ?');
 const selectQuestions = db.prepare('SELECT question FROM application_questions WHERE guild_id = ? ORDER BY position');
 const selectSelfRoles = db.prepare('SELECT role_id, label, emoji FROM self_roles WHERE guild_id = ?');
+const selectTicketTypes = db.prepare('SELECT type_id, name, emoji, category_id, welcome_message FROM ticket_types WHERE guild_id = ? ORDER BY position');
+const selectTicketTypeRoles = db.prepare('SELECT role_id FROM ticket_type_staff_roles WHERE guild_id = ? AND type_id = ?');
+const selectAppTypes = db.prepare('SELECT type_id, name, emoji, review_channel_id, accepted_role_id FROM application_types WHERE guild_id = ? ORDER BY position');
+const selectAppTypeQuestions = db.prepare('SELECT question FROM application_type_questions WHERE guild_id = ? AND type_id = ? ORDER BY position');
 
 export function getGuildConfig(guildId) {
   ensureGuild.run(guildId);
   const row = selectGuild.get(guildId);
   const words = selectWords.all(guildId).map((r) => r.word);
   const roles = selectRoles.all(guildId).map((r) => r.role_id);
-  let staffRoles = selectStaffRoles.all(guildId).map((r) => r.role_id);
-  // Migration: alte Einzelrolle (Spalte) übernehmen, falls die Liste noch leer ist.
-  if (staffRoles.length === 0 && row.tickets_staff_role_id) {
-    staffRoles = [row.tickets_staff_role_id];
-  }
-  const cfg = rowToConfig(guildId, row, words, roles, staffRoles);
-  cfg.applications.questions = selectQuestions.all(guildId).map((r) => r.question);
+  const cfg = rowToConfig(guildId, row, words, roles, []);
   cfg.selfRoles = selectSelfRoles.all(guildId).map((r) => ({ roleId: r.role_id, label: r.label, emoji: r.emoji }));
+
+  // Ticket-Arten laden
+  cfg.tickets.types = selectTicketTypes.all(guildId).map((t) => ({
+    id: t.type_id,
+    name: t.name,
+    emoji: t.emoji,
+    categoryId: t.category_id || '',
+    welcomeMessage: t.welcome_message || '',
+    staffRoleIds: selectTicketTypeRoles.all(guildId, t.type_id).map((r) => r.role_id)
+  }));
+  // Migration: alte Einzel-Ticket-Konfiguration in eine Standard-Art überführen.
+  if (cfg.tickets.types.length === 0) {
+    let legacyStaff = selectStaffRoles.all(guildId).map((r) => r.role_id);
+    if (legacyStaff.length === 0 && row.tickets_staff_role_id) legacyStaff = [row.tickets_staff_role_id];
+    if (row.tickets_category_id || legacyStaff.length || row.tickets_welcome_message) {
+      cfg.tickets.types = [{
+        id: 'support',
+        name: 'Support',
+        emoji: '🎫',
+        categoryId: row.tickets_category_id || '',
+        welcomeMessage: row.tickets_welcome_message || 'Danke fuer dein Ticket! Ein Teammitglied meldet sich gleich.',
+        staffRoleIds: legacyStaff
+      }];
+    }
+  }
+
+  // Bewerbungs-Arten laden
+  cfg.applications.types = selectAppTypes.all(guildId).map((t) => ({
+    id: t.type_id,
+    name: t.name,
+    emoji: t.emoji,
+    reviewChannelId: t.review_channel_id || '',
+    acceptedRoleId: t.accepted_role_id || '',
+    questions: selectAppTypeQuestions.all(guildId, t.type_id).map((q) => q.question)
+  }));
+  // Migration: alte Einzel-Bewerbung in eine Standard-Art überführen.
+  if (cfg.applications.types.length === 0) {
+    const legacyQuestions = selectQuestions.all(guildId).map((r) => r.question);
+    if (row.applications_review_channel_id || row.applications_accepted_role_id || legacyQuestions.length) {
+      cfg.applications.types = [{
+        id: 'team',
+        name: 'Team-Bewerbung',
+        emoji: '📝',
+        reviewChannelId: row.applications_review_channel_id || '',
+        acceptedRoleId: row.applications_accepted_role_id || '',
+        questions: legacyQuestions
+      }];
+    }
+  }
+
   return cfg;
 }
 
 const updateGuild = db.prepare(`
   UPDATE guilds SET
-    tickets_enabled=@tickets_enabled, tickets_category_id=@tickets_category_id,
-    tickets_staff_role_id=@tickets_staff_role_id, tickets_log_channel_id=@tickets_log_channel_id,
-    tickets_panel_message=@tickets_panel_message, tickets_welcome_message=@tickets_welcome_message,
+    tickets_enabled=@tickets_enabled, tickets_log_channel_id=@tickets_log_channel_id,
+    tickets_panel_message=@tickets_panel_message,
     antiraid_enabled=@antiraid_enabled, antiraid_join_threshold=@antiraid_join_threshold,
     antiraid_join_window_seconds=@antiraid_join_window_seconds, antiraid_action=@antiraid_action,
     antiraid_min_account_age_minutes=@antiraid_min_account_age_minutes,
@@ -254,8 +333,6 @@ const updateGuild = db.prepare(`
     logging_member_join=@logging_member_join, logging_member_leave=@logging_member_leave,
     logging_mod_actions=@logging_mod_actions,
     applications_enabled=@applications_enabled,
-    applications_review_channel_id=@applications_review_channel_id,
-    applications_accepted_role_id=@applications_accepted_role_id,
     applications_panel_message=@applications_panel_message,
     autorole_enabled=@autorole_enabled, autorole_role_id=@autorole_role_id,
     levels_enabled=@levels_enabled, levels_xp_per_message=@levels_xp_per_message,
@@ -275,17 +352,32 @@ const deleteQuestions = db.prepare('DELETE FROM application_questions WHERE guil
 const insertQuestion = db.prepare('INSERT INTO application_questions (guild_id, position, question) VALUES (?, ?, ?)');
 const deleteSelfRoles = db.prepare('DELETE FROM self_roles WHERE guild_id = ?');
 const insertSelfRole = db.prepare('INSERT INTO self_roles (guild_id, role_id, label, emoji) VALUES (?, ?, ?, ?)');
+const deleteTicketTypes = db.prepare('DELETE FROM ticket_types WHERE guild_id = ?');
+const deleteTicketTypeRoles = db.prepare('DELETE FROM ticket_type_staff_roles WHERE guild_id = ?');
+const insertTicketType = db.prepare('INSERT INTO ticket_types (guild_id, type_id, position, name, emoji, category_id, welcome_message) VALUES (?,?,?,?,?,?,?)');
+const insertTicketTypeRole = db.prepare('INSERT INTO ticket_type_staff_roles (guild_id, type_id, role_id) VALUES (?, ?, ?)');
+const deleteAppTypes = db.prepare('DELETE FROM application_types WHERE guild_id = ?');
+const deleteAppTypeQuestions = db.prepare('DELETE FROM application_type_questions WHERE guild_id = ?');
+const insertAppType = db.prepare('INSERT INTO application_types (guild_id, type_id, position, name, emoji, review_channel_id, accepted_role_id) VALUES (?,?,?,?,?,?,?)');
+const insertAppTypeQuestion = db.prepare('INSERT INTO application_type_questions (guild_id, type_id, position, question) VALUES (?,?,?,?)');
+
+// Erzeugt eine stabile, eindeutige Art-ID aus dem Namen (oder zufällig).
+function makeTypeId(name, used) {
+  let base = String(name || 'art').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20) || 'art';
+  let id = base;
+  let n = 1;
+  while (used.has(id)) id = `${base}-${n++}`;
+  used.add(id);
+  return id;
+}
 
 export const saveGuildConfig = db.transaction((cfg) => {
   ensureGuild.run(cfg.guildId);
   updateGuild.run({
     guild_id: cfg.guildId,
     tickets_enabled: b(cfg.tickets.enabled),
-    tickets_category_id: cfg.tickets.categoryId || '',
-    tickets_staff_role_id: (cfg.tickets.staffRoleIds && cfg.tickets.staffRoleIds[0]) || '',
     tickets_log_channel_id: cfg.tickets.logChannelId || '',
     tickets_panel_message: cfg.tickets.panelMessage || '',
-    tickets_welcome_message: cfg.tickets.welcomeMessage || '',
     antiraid_enabled: b(cfg.antiraid.enabled),
     antiraid_join_threshold: cfg.antiraid.joinThreshold,
     antiraid_join_window_seconds: cfg.antiraid.joinWindowSeconds,
@@ -312,8 +404,6 @@ export const saveGuildConfig = db.transaction((cfg) => {
     logging_member_leave: b(cfg.logging.memberLeave),
     logging_mod_actions: b(cfg.logging.modActions),
     applications_enabled: b(cfg.applications?.enabled),
-    applications_review_channel_id: cfg.applications?.reviewChannelId || '',
-    applications_accepted_role_id: cfg.applications?.acceptedRoleId || '',
     applications_panel_message: cfg.applications?.panelMessage || '',
     autorole_enabled: b(cfg.autorole?.enabled),
     autorole_role_id: cfg.autorole?.roleId || '',
@@ -336,20 +426,57 @@ export const saveGuildConfig = db.transaction((cfg) => {
     const role = String(r).trim();
     if (role) insertRole.run(cfg.guildId, role);
   }
-  deleteStaffRoles.run(cfg.guildId);
-  for (const r of cfg.tickets.staffRoleIds || []) {
-    const role = String(r).trim();
-    if (role) insertStaffRole.run(cfg.guildId, role);
-  }
-  deleteQuestions.run(cfg.guildId);
-  (cfg.applications?.questions || []).forEach((q, i) => {
-    const question = String(q).trim();
-    if (question) insertQuestion.run(cfg.guildId, i, question.slice(0, 300));
-  });
   deleteSelfRoles.run(cfg.guildId);
   for (const sr of cfg.selfRoles || []) {
     const role = String(sr.roleId || '').trim();
     if (role) insertSelfRole.run(cfg.guildId, role, String(sr.label || '').slice(0, 80), String(sr.emoji || '').slice(0, 40));
+  }
+
+  // Ticket-Arten (mit Team-Rollen je Art)
+  deleteTicketTypes.run(cfg.guildId);
+  deleteTicketTypeRoles.run(cfg.guildId);
+  // Legacy-Einzeltabellen leeren, damit die Migration nicht erneut greift.
+  deleteStaffRoles.run(cfg.guildId);
+  {
+    const used = new Set();
+    (cfg.tickets.types || []).forEach((type, i) => {
+      const typeId = String(type.id || '').trim() || makeTypeId(type.name, used);
+      used.add(typeId);
+      insertTicketType.run(
+        cfg.guildId, typeId, i,
+        String(type.name || 'Ticket').slice(0, 60),
+        String(type.emoji || '').slice(0, 40),
+        String(type.categoryId || ''),
+        String(type.welcomeMessage || '').slice(0, 2000)
+      );
+      for (const r of type.staffRoleIds || []) {
+        const role = String(r).trim();
+        if (role) insertTicketTypeRole.run(cfg.guildId, typeId, role);
+      }
+    });
+  }
+
+  // Bewerbungs-Arten (mit Fragen je Art)
+  deleteAppTypes.run(cfg.guildId);
+  deleteAppTypeQuestions.run(cfg.guildId);
+  deleteQuestions.run(cfg.guildId); // Legacy leeren
+  {
+    const used = new Set();
+    (cfg.applications.types || []).forEach((type, i) => {
+      const typeId = String(type.id || '').trim() || makeTypeId(type.name, used);
+      used.add(typeId);
+      insertAppType.run(
+        cfg.guildId, typeId, i,
+        String(type.name || 'Bewerbung').slice(0, 60),
+        String(type.emoji || '').slice(0, 40),
+        String(type.reviewChannelId || ''),
+        String(type.acceptedRoleId || '')
+      );
+      (type.questions || []).slice(0, 5).forEach((q, qi) => {
+        const question = String(q).trim();
+        if (question) insertAppTypeQuestion.run(cfg.guildId, typeId, qi, question.slice(0, 300));
+      });
+    });
   }
 });
 
@@ -421,10 +548,10 @@ const bumpCounter = db.prepare(`
 `);
 const readCounter = db.prepare('SELECT counter FROM ticket_counter WHERE guild_id = ?');
 const insertTicket = db.prepare(
-  "INSERT OR REPLACE INTO tickets (channel_id, guild_id, opener_id, number, created_at, status) VALUES (?,?,?,?,?, 'open')"
+  "INSERT OR REPLACE INTO tickets (channel_id, guild_id, opener_id, number, created_at, status, type_id) VALUES (?,?,?,?,?, 'open', ?)"
 );
 const ticketByChannel = db.prepare("SELECT 1 FROM tickets WHERE channel_id=? AND status='open'");
-const openByUser = db.prepare("SELECT 1 FROM tickets WHERE guild_id=? AND opener_id=? AND status='open'");
+const openByUserType = db.prepare("SELECT 1 FROM tickets WHERE guild_id=? AND opener_id=? AND type_id=? AND status='open'");
 const closeTicketStmt = db.prepare("UPDATE tickets SET status='closed' WHERE channel_id=?");
 
 export function nextTicketNumber(guildId) {
@@ -432,16 +559,17 @@ export function nextTicketNumber(guildId) {
   return readCounter.get(guildId).counter;
 }
 
-export function createTicket(channelId, guildId, openerId, number) {
-  insertTicket.run(channelId, guildId, openerId, number, new Date().toISOString());
+export function createTicket(channelId, guildId, openerId, number, typeId = '') {
+  insertTicket.run(channelId, guildId, openerId, number, new Date().toISOString(), typeId);
 }
 
 export function isTicketChannel(channelId) {
   return !!ticketByChannel.get(channelId);
 }
 
-export function hasOpenTicket(guildId, openerId) {
-  return !!openByUser.get(guildId, openerId);
+// Prüft, ob der Nutzer bereits ein offenes Ticket dieser Art hat.
+export function hasOpenTicket(guildId, openerId, typeId = '') {
+  return !!openByUserType.get(guildId, openerId, typeId);
 }
 
 export function closeTicket(channelId) {

@@ -39,22 +39,17 @@
             <label class="switch"><input type="checkbox" data-path="tickets.enabled" /><span></span></label>
           </div>
           <div class="card-body">
-            <label>Kategorie für Ticket-Kanäle
-              <select data-path="tickets.categoryId" data-source="categories"></select>
-            </label>
-            <label>Team-Rollen (dürfen Tickets sehen) – Mehrfachauswahl mit Strg/⌘
-              <select data-path="tickets.staffRoleIds" data-source="roles" multiple size="4"></select>
-            </label>
             <label>Log-Kanal für Transkripte
               <select data-path="tickets.logChannelId" data-source="textChannels"></select>
             </label>
-            <label>Panel-Text
+            <label>Panel-Text (Überschrift des Panels)
               <textarea data-path="tickets.panelMessage" rows="2"></textarea>
             </label>
-            <label>Begrüßung im Ticket
-              <textarea data-path="tickets.welcomeMessage" rows="2"></textarea>
-            </label>
-            <p class="hint">Tipp: Mit <code>/ticketpanel</code> postest du danach den Button in einen Kanal.</p>
+            <hr class="sep" />
+            <p class="hint"><strong>Ticket-Arten</strong> – jede Art bekommt einen eigenen Button im Panel (eigene Kategorie, Team-Rollen und Begrüßung).</p>
+            <div id="ticket-types-editor"></div>
+            <button type="button" id="ticket-type-add" class="btn-ghost">+ Ticket-Art hinzufügen</button>
+            <p class="hint">Danach mit <code>/ticketpanel</code> das Panel in einen Kanal posten.</p>
           </div>
         </section>
 
@@ -168,19 +163,14 @@
             <label class="switch"><input type="checkbox" data-path="applications.enabled" /><span></span></label>
           </div>
           <div class="card-body">
-            <label>Review-Kanal (wo Bewerbungen landen)
-              <select data-path="applications.reviewChannelId" data-source="textChannels"></select>
-            </label>
-            <label>Rolle bei Annahme (optional)
-              <select data-path="applications.acceptedRoleId" data-source="roles"></select>
-            </label>
-            <label>Panel-Text
+            <label>Panel-Text (Überschrift des Panels)
               <textarea data-path="applications.panelMessage" rows="2"></textarea>
             </label>
-            <label>Fragen (eine pro Zeile, max. 5)
-              <textarea data-path="applications.questions" data-lines rows="4" placeholder="Wie alt bist du?&#10;Warum möchtest du ins Team?&#10;Wie viel Zeit hast du?"></textarea>
-            </label>
-            <p class="hint">Danach mit <code>/applicationpanel</code> den Button in einen Kanal posten.</p>
+            <hr class="sep" />
+            <p class="hint"><strong>Bewerbungs-Arten</strong> – jede Art bekommt einen eigenen Button (eigene Fragen, eigener Review-Kanal, eigene Rolle bei Annahme).</p>
+            <div id="app-types-editor"></div>
+            <button type="button" id="app-type-add" class="btn-ghost">+ Bewerbungs-Art hinzufügen</button>
+            <p class="hint">Danach mit <code>/applicationpanel</code> das Panel in einen Kanal posten.</p>
           </div>
         </section>
 

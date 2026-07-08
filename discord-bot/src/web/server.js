@@ -138,11 +138,21 @@ function sanitizeConfig(guildId, body = {}) {
     guildId,
     tickets: {
       enabled: bool(t.enabled, cur.tickets.enabled),
-      categoryId: str(t.categoryId, cur.tickets.categoryId),
-      staffRoleIds: list(t.staffRoleIds, cur.tickets.staffRoleIds),
       logChannelId: str(t.logChannelId, cur.tickets.logChannelId),
       panelMessage: str(t.panelMessage, cur.tickets.panelMessage).slice(0, 2000),
-      welcomeMessage: str(t.welcomeMessage, cur.tickets.welcomeMessage).slice(0, 2000)
+      types: Array.isArray(t.types)
+        ? t.types
+            .filter((x) => x && String(x.name || '').trim())
+            .slice(0, 20)
+            .map((x) => ({
+              id: String(x.id || '').trim(),
+              name: String(x.name).slice(0, 60),
+              emoji: String(x.emoji || '').slice(0, 40),
+              categoryId: String(x.categoryId || ''),
+              welcomeMessage: String(x.welcomeMessage || '').slice(0, 2000),
+              staffRoleIds: list(x.staffRoleIds, [])
+            }))
+        : cur.tickets.types
     },
     antiraid: {
       enabled: bool(a.enabled, cur.antiraid.enabled),
@@ -181,10 +191,20 @@ function sanitizeConfig(guildId, body = {}) {
     },
     applications: {
       enabled: bool(ap.enabled, cur.applications.enabled),
-      reviewChannelId: str(ap.reviewChannelId, cur.applications.reviewChannelId),
-      acceptedRoleId: str(ap.acceptedRoleId, cur.applications.acceptedRoleId),
       panelMessage: str(ap.panelMessage, cur.applications.panelMessage).slice(0, 2000),
-      questions: list(ap.questions, cur.applications.questions).slice(0, 5)
+      types: Array.isArray(ap.types)
+        ? ap.types
+            .filter((x) => x && String(x.name || '').trim())
+            .slice(0, 20)
+            .map((x) => ({
+              id: String(x.id || '').trim(),
+              name: String(x.name).slice(0, 60),
+              emoji: String(x.emoji || '').slice(0, 40),
+              reviewChannelId: String(x.reviewChannelId || ''),
+              acceptedRoleId: String(x.acceptedRoleId || ''),
+              questions: list(x.questions, []).slice(0, 5)
+            }))
+        : cur.applications.types
     },
     autorole: {
       enabled: bool(ar.enabled, cur.autorole.enabled),

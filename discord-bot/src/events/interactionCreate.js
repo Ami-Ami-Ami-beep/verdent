@@ -1,13 +1,13 @@
 import { Events, MessageFlags } from 'discord.js';
 import {
-  OPEN_BUTTON_ID,
+  OPEN_BUTTON_PREFIX,
   CLOSE_BUTTON_ID,
   handleOpenTicket,
   handleCloseTicket
 } from '../features/tickets.js';
 import {
-  APP_OPEN_ID,
-  APP_MODAL_ID,
+  APP_OPEN_PREFIX,
+  APP_MODAL_PREFIX,
   APP_ACCEPT_PREFIX,
   APP_REJECT_PREFIX,
   handleOpenApplication,
@@ -22,16 +22,16 @@ export default {
     try {
       // Bewerbungs-Formular (Modal)
       if (interaction.isModalSubmit()) {
-        if (interaction.customId === APP_MODAL_ID) return await handleApplicationSubmit(interaction);
+        if (interaction.customId.startsWith(APP_MODAL_PREFIX)) return await handleApplicationSubmit(interaction);
         return;
       }
 
       // Button-Klicks
       if (interaction.isButton()) {
         const id = interaction.customId;
-        if (id === OPEN_BUTTON_ID) return await handleOpenTicket(interaction);
+        if (id.startsWith(OPEN_BUTTON_PREFIX)) return await handleOpenTicket(interaction);
         if (id === CLOSE_BUTTON_ID) return await handleCloseTicket(interaction);
-        if (id === APP_OPEN_ID) return await handleOpenApplication(interaction);
+        if (id.startsWith(APP_OPEN_PREFIX)) return await handleOpenApplication(interaction);
         if (id.startsWith(APP_ACCEPT_PREFIX)) return await handleApplicationDecision(interaction, true);
         if (id.startsWith(APP_REJECT_PREFIX)) return await handleApplicationDecision(interaction, false);
         if (id.startsWith(SELFROLE_PREFIX)) return await handleSelfRoleToggle(interaction);

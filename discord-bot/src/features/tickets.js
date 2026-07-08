@@ -16,34 +16,51 @@ import {
   closeTicket
 } from '../lib/database.js';
 
-export const OPEN_BUTTON_ID = 'ticket_open';
+export const OPEN_BUTTON_PREFIX = 'ticket_open:';
 export const CLOSE_BUTTON_ID = 'ticket_close';
 
-/** Baut das Panel (Embed + Button), das im Konfig-Kanal gepostet wird. */
+/** Baut das Panel: ein Button pro Ticket-Art. */
 export function buildTicketPanel(cfg) {
+  const types = cfg.tickets.types || [];
   const embed = new EmbedBuilder()
-    .setTitle('🎫 Support-Ticket')
+    .setTitle('🎫 Support-Tickets')
     .setDescription(cfg.tickets.panelMessage)
     .setColor(0x5865f2);
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(OPEN_BUTTON_ID)
-      .setLabel('Ticket öffnen')
-      .setEmoji('🎫')
-      .setStyle(ButtonStyle.Primary)
-  );
-  return { embeds: [embed], components: [row] };
+  const rows = [];
+  let row = new ActionRowBuilder();
+  types.forEach((type, i) => {
+    if (i > 0 && i % 5 === 0) {
+      rows.push(row);
+      row = new ActionRowBuilder();
+    }
+    const btn = new ButtonBuilder()
+      .setCustomId(`${OPEN_BUTTON_PREFIX}${type.id}`)
+      .setLabel(type.name || 'Ticket')
+      .setStyle(ButtonStyle.Primary);
+    if (type.emoji) {
+      try { btn.setEmoji(type.emoji); } catch { /* ungültiges Emoji ignorieren */ }
+    }
+    row.addComponents(btn);
+  });
+  if (row.components.length) rows.push(row);
+
+  return { embeds: [embed], components: rows.slice(0, 5) };
 }
 
-/** Reaktion auf einen Klick auf "Ticket öffnen". */
+/** Reaktion auf einen Klick auf einen Ticket-Art-Button. */
 export async function handleOpenTicket(interaction) {
   const cfg = getGuildConfig(interaction.guildId);
   if (!cfg.tickets.enabled) {
     return interaction.reply({ content: 'Das Ticket-System ist aktuell deaktiviert.', ephemeral: true });
   }
-  if (hasOpenTicket(interaction.guildId, interaction.user.id)) {
-    return interaction.reply({ content: 'Du hast bereits ein offenes Ticket.', ephemeral: true });
+  const typeId = interaction.customId.slice(OPEN_BUTTON_PREFIX.length);
+  const type = (cfg.tickets.types || []).find((t) => t.id === typeId) || (cfg.tickets.types || [])[0];
+  if (!type) {
+    return interaction.reply({ content: 'Diese Ticket-Art existiert nicht mehr.', ephemeral: true });
+  }
+  if (hasOpenTicket(interaction.guildId, interaction.user.id, type.id)) {
+    return interaction.reply({ content: `Du hast bereits ein offenes **${type.name}**-Ticket.`, ephemeral: true });
   }
 
   await interaction.deferReply({ ephemeral: true });
@@ -51,7 +68,7 @@ export async function handleOpenTicket(interaction) {
   const number = nextTicketNumber(interaction.guildId);
   const guild = interaction.guild;
 
-  // Berechtigungen: Ticket-Ersteller + Staff-Rolle duerfen sehen, sonst niemand.
+  // Berechtigungen: Ticket-Ersteller + Team-Rollen dieser Art dürfen sehen, sonst niemand.
   const overwrites = [
     { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
     {
@@ -63,7 +80,7 @@ export async function handleOpenTicket(interaction) {
       ]
     }
   ];
-  for (const staffRoleId of cfg.tickets.staffRoleIds || []) {
+  for (const staffRoleId of type.staffRoleIds || []) {
     if (!staffRoleId) continue;
     overwrites.push({
       id: staffRoleId,
@@ -80,21 +97,21 @@ export async function handleOpenTicket(interaction) {
     channel = await guild.channels.create({
       name: `ticket-${String(number).padStart(4, '0')}`,
       type: ChannelType.GuildText,
-      parent: cfg.tickets.categoryId || null,
+      parent: type.categoryId || null,
       permissionOverwrites: overwrites
     });
   } catch (err) {
     console.error('Ticket-Kanal konnte nicht erstellt werden:', err);
     return interaction.editReply(
-      'Ticket konnte nicht erstellt werden. Prüfe, ob die Kategorie-ID stimmt und der Bot die Rechte "Kanäle verwalten" hat.'
+      'Ticket konnte nicht erstellt werden. Prüfe, ob die Kategorie stimmt und der Bot die Rechte "Kanäle verwalten" hat.'
     );
   }
 
-  createTicket(channel.id, guild.id, interaction.user.id, number);
+  createTicket(channel.id, guild.id, interaction.user.id, number, type.id);
 
   const embed = new EmbedBuilder()
-    .setTitle(`Ticket #${number}`)
-    .setDescription(cfg.tickets.welcomeMessage)
+    .setTitle(`${type.emoji || '🎫'} ${type.name} · Ticket #${number}`)
+    .setDescription(type.welcomeMessage || 'Ein Teammitglied meldet sich gleich.')
     .setColor(0x57f287)
     .setFooter({ text: `Erstellt von ${interaction.user.tag}` })
     .setTimestamp();
@@ -107,7 +124,7 @@ export async function handleOpenTicket(interaction) {
       .setStyle(ButtonStyle.Danger)
   );
 
-  const mention = (cfg.tickets.staffRoleIds || []).filter(Boolean).map((id) => `<@&${id}>`).join(' ');
+  const mention = (type.staffRoleIds || []).filter(Boolean).map((id) => `<@&${id}>`).join(' ');
   await channel.send({ content: `${mention} <@${interaction.user.id}>`.trim(), embeds: [embed], components: [row] });
 
   return interaction.editReply(`Dein Ticket wurde erstellt: <#${channel.id}>`);
