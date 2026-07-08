@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Amu Bot">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#101a3d"/>
+      <stop offset="1" stop-color="#070b1c"/>
+    </linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7aa2ff"/>
+      <stop offset="1" stop-color="#3d63ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#bg)" stroke="#4f7bff" stroke-opacity="0.55" stroke-width="4"/>
+  <polyline points="150,410 256,104 362,410" fill="none" stroke="url(#a)" stroke-width="78" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="196" y="286" width="120" height="46" rx="23" fill="#2fe3ff"/>
+</svg>

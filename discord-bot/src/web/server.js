@@ -1,0 +1,294 @@
+// Konfigurations-Website (Dashboard).
+// Bietet Login + REST-API zum Lesen/Schreiben der Server-Konfiguration.
+import express from 'express';
+import session from 'express-session';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ChannelType } from 'discord.js';
+import { getGuildConfig, saveGuildConfig } from '../lib/database.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export function startWeb(manager) {
+  const port = process.env.WEB_PORT || 3000;
+  const password = process.env.DASHBOARD_PASSWORD || 'admin';
+  const secret = process.env.SESSION_SECRET || 'change-me';
+
+  const app = express();
+  app.use(express.json({ limit: '256kb' }));
+  app.use(
+    session({
+      secret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 Stunden
+    })
+  );
+
+  // Middleware: schützt die /api/-Routen (außer Login/Session).
+  const requireAuth = (req, res, next) => {
+    if (req.session?.authed) return next();
+    res.status(401).json({ error: 'Nicht angemeldet' });
+  };
+
+  // ── Auth ───────────────────────────────────────────────
+  app.post('/api/login', (req, res) => {
+    if (req.body?.password === password) {
+      req.session.authed = true;
+      return res.json({ ok: true });
+    }
+    res.status(401).json({ error: 'Falsches Passwort' });
+  });
+
+  app.post('/api/logout', (req, res) => {
+    req.session.destroy(() => res.json({ ok: true }));
+  });
+
+  app.get('/api/session', (req, res) => {
+    res.json({ authed: !!req.session?.authed });
+  });
+
+  // ── Bots verwalten ─────────────────────────────────────
+  app.get('/api/bots', requireAuth, (req, res) => {
+    res.json(manager.listRunningBots());
+  });
+
+  app.post('/api/bots', requireAuth, async (req, res) => {
+    const token = String(req.body?.token || '').trim();
+    const label = String(req.body?.label || '').slice(0, 60);
+    if (!token) return res.status(400).json({ error: 'Bitte einen Bot-Token eingeben.' });
+    try {
+      const bot = await manager.addBot(token, label);
+      res.json({ ok: true, bot });
+    } catch (err) {
+      const msg = /token/i.test(err.message)
+        ? 'Der Token ist ungültig. Prüfe ihn im Developer Portal (Bot → Reset Token).'
+        : `Bot konnte nicht gestartet werden: ${err.message}`;
+      res.status(400).json({ error: msg });
+    }
+  });
+
+  app.delete('/api/bots/:id', requireAuth, async (req, res) => {
+    await manager.removeBot(Number(req.params.id));
+    res.json({ ok: true });
+  });
+
+  // ── Server-Liste ───────────────────────────────────────
+  app.get('/api/guilds', requireAuth, (req, res) => {
+    const guilds = manager.allGuilds().map((g) => ({
+      id: g.id,
+      name: g.name,
+      icon: g.iconURL({ size: 64 }) || null,
+      memberCount: g.memberCount
+    }));
+    res.json(guilds);
+  });
+
+  // Kanäle, Kategorien und Rollen eines Servers (für die Auswahlfelder).
+  app.get('/api/guilds/:id/meta', requireAuth, (req, res) => {
+    const guild = manager.findGuild(req.params.id);
+    if (!guild) return res.status(404).json({ error: 'Server nicht gefunden' });
+
+    const textChannels = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildText)
+      .map((c) => ({ id: c.id, name: c.name }));
+    const voiceChannels = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildVoice)
+      .map((c) => ({ id: c.id, name: c.name }));
+    const categories = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildCategory)
+      .map((c) => ({ id: c.id, name: c.name }));
+    const roles = guild.roles.cache
+      .filter((r) => r.id !== guild.id) // @everyone weglassen
+      .map((r) => ({ id: r.id, name: r.name }));
+
+    res.json({ name: guild.name, textChannels, voiceChannels, categories, roles });
+  });
+
+  // ── Konfiguration lesen/schreiben ──────────────────────
+  app.get('/api/guilds/:id/config', requireAuth, (req, res) => {
+    if (!manager.findGuild(req.params.id)) {
+      return res.status(404).json({ error: 'Server nicht gefunden' });
+    }
+    res.json(getGuildConfig(req.params.id));
+  });
+
+  app.post('/api/guilds/:id/config', requireAuth, (req, res) => {
+    if (!manager.findGuild(req.params.id)) {
+      return res.status(404).json({ error: 'Server nicht gefunden' });
+    }
+    try {
+      const cfg = sanitizeConfig(req.params.id, req.body);
+      saveGuildConfig(cfg);
+      res.json({ ok: true, config: getGuildConfig(req.params.id) });
+    } catch (err) {
+      console.error('Konfiguration speichern fehlgeschlagen:', err);
+      res.status(400).json({ error: 'Ungültige Konfiguration' });
+    }
+  });
+
+  // Statische Dateien (das eigentliche Dashboard-Frontend).
+  app.use(express.static(join(__dirname, 'public')));
+
+  app.listen(port, () => {
+    console.log(`🌐 Dashboard läuft auf http://localhost:${port}`);
+  });
+
+  return app;
+}
+
+// Übernimmt nur bekannte Felder und erzwingt sinnvolle Typen/Grenzen.
+function sanitizeConfig(guildId, body = {}) {
+  const cur = getGuildConfig(guildId);
+  const bool = (v, d) => (typeof v === 'boolean' ? v : d);
+  const str = (v, d) => (typeof v === 'string' ? v : d);
+  const int = (v, d, min, max) => {
+    const n = Number.parseInt(v, 10);
+    if (Number.isNaN(n)) return d;
+    return Math.min(max, Math.max(min, n));
+  };
+  const list = (v, d) =>
+    Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : d;
+
+  const t = body.tickets || {};
+  const a = body.antiraid || {};
+  const m = body.automod || {};
+  const w = body.welcome || {};
+  const l = body.logging || {};
+  const ap = body.applications || {};
+  const ar = body.autorole || {};
+  const lv = body.levels || {};
+  const sg = body.suggestions || {};
+  const li = body.live || {};
+  const sb = body.starboard || {};
+  const ct = body.counting || {};
+  const tv = body.tempvoice || {};
+
+  const validActions = ['kick', 'ban', 'lockdown', 'alert'];
+
+  return {
+    guildId,
+    tickets: {
+      enabled: bool(t.enabled, cur.tickets.enabled),
+      logChannelId: str(t.logChannelId, cur.tickets.logChannelId),
+      panelMessage: str(t.panelMessage, cur.tickets.panelMessage).slice(0, 2000),
+      types: Array.isArray(t.types)
+        ? t.types
+            .filter((x) => x && String(x.name || '').trim())
+            .slice(0, 20)
+            .map((x) => ({
+              id: String(x.id || '').trim(),
+              name: String(x.name).slice(0, 60),
+              emoji: String(x.emoji || '').slice(0, 40),
+              categoryId: String(x.categoryId || ''),
+              welcomeMessage: String(x.welcomeMessage || '').slice(0, 2000),
+              staffRoleIds: list(x.staffRoleIds, [])
+            }))
+        : cur.tickets.types
+    },
+    antiraid: {
+      enabled: bool(a.enabled, cur.antiraid.enabled),
+      joinThreshold: int(a.joinThreshold, cur.antiraid.joinThreshold, 2, 100),
+      joinWindowSeconds: int(a.joinWindowSeconds, cur.antiraid.joinWindowSeconds, 1, 600),
+      action: validActions.includes(a.action) ? a.action : cur.antiraid.action,
+      minAccountAgeMinutes: int(a.minAccountAgeMinutes, cur.antiraid.minAccountAgeMinutes, 0, 525600),
+      alertChannelId: str(a.alertChannelId, cur.antiraid.alertChannelId)
+    },
+    automod: {
+      enabled: bool(m.enabled, cur.automod.enabled),
+      antiInvite: bool(m.antiInvite, cur.automod.antiInvite),
+      antiSpam: bool(m.antiSpam, cur.automod.antiSpam),
+      spamMessageCount: int(m.spamMessageCount, cur.automod.spamMessageCount, 2, 50),
+      spamWindowSeconds: int(m.spamWindowSeconds, cur.automod.spamWindowSeconds, 1, 60),
+      antiMassMention: bool(m.antiMassMention, cur.automod.antiMassMention),
+      maxMentions: int(m.maxMentions, cur.automod.maxMentions, 1, 50),
+      bannedWords: list(m.bannedWords, cur.automod.bannedWords),
+      ignoredRoleIds: list(m.ignoredRoleIds, cur.automod.ignoredRoleIds)
+    },
+    welcome: {
+      enabled: bool(w.enabled, cur.welcome.enabled),
+      channelId: str(w.channelId, cur.welcome.channelId),
+      message: str(w.message, cur.welcome.message).slice(0, 2000),
+      leaveEnabled: bool(w.leaveEnabled, cur.welcome.leaveEnabled),
+      leaveMessage: str(w.leaveMessage, cur.welcome.leaveMessage).slice(0, 2000)
+    },
+    logging: {
+      enabled: bool(l.enabled, cur.logging.enabled),
+      channelId: str(l.channelId, cur.logging.channelId),
+      messageDelete: bool(l.messageDelete, cur.logging.messageDelete),
+      messageEdit: bool(l.messageEdit, cur.logging.messageEdit),
+      memberJoin: bool(l.memberJoin, cur.logging.memberJoin),
+      memberLeave: bool(l.memberLeave, cur.logging.memberLeave),
+      modActions: bool(l.modActions, cur.logging.modActions)
+    },
+    applications: {
+      enabled: bool(ap.enabled, cur.applications.enabled),
+      panelMessage: str(ap.panelMessage, cur.applications.panelMessage).slice(0, 2000),
+      types: Array.isArray(ap.types)
+        ? ap.types
+            .filter((x) => x && String(x.name || '').trim())
+            .slice(0, 20)
+            .map((x) => ({
+              id: String(x.id || '').trim(),
+              name: String(x.name).slice(0, 60),
+              emoji: String(x.emoji || '').slice(0, 40),
+              reviewChannelId: String(x.reviewChannelId || ''),
+              acceptedRoleId: String(x.acceptedRoleId || ''),
+              questions: list(x.questions, []).slice(0, 5)
+            }))
+        : cur.applications.types
+    },
+    autorole: {
+      enabled: bool(ar.enabled, cur.autorole.enabled),
+      roleId: str(ar.roleId, cur.autorole.roleId)
+    },
+    levels: {
+      enabled: bool(lv.enabled, cur.levels.enabled),
+      xpPerMessage: int(lv.xpPerMessage, cur.levels.xpPerMessage, 1, 100),
+      cooldownSeconds: int(lv.cooldownSeconds, cur.levels.cooldownSeconds, 0, 3600),
+      announce: bool(lv.announce, cur.levels.announce),
+      announceChannelId: str(lv.announceChannelId, cur.levels.announceChannelId)
+    },
+    suggestions: {
+      enabled: bool(sg.enabled, cur.suggestions.enabled),
+      channelId: str(sg.channelId, cur.suggestions.channelId)
+    },
+    live: {
+      enabled: bool(li.enabled, cur.live.enabled),
+      channelId: str(li.channelId, cur.live.channelId),
+      message: str(li.message, cur.live.message).slice(0, 2000),
+      requiredRoleId: str(li.requiredRoleId, cur.live.requiredRoleId)
+    },
+    starboard: {
+      enabled: bool(sb.enabled, cur.starboard.enabled),
+      channelId: str(sb.channelId, cur.starboard.channelId),
+      threshold: int(sb.threshold, cur.starboard.threshold, 1, 100),
+      emoji: str(sb.emoji, cur.starboard.emoji).slice(0, 40) || '⭐'
+    },
+    counting: {
+      enabled: bool(ct.enabled, cur.counting.enabled),
+      channelId: str(ct.channelId, cur.counting.channelId)
+    },
+    tempvoice: {
+      enabled: bool(tv.enabled, cur.tempvoice.enabled),
+      hubChannelId: str(tv.hubChannelId, cur.tempvoice.hubChannelId),
+      categoryId: str(tv.categoryId, cur.tempvoice.categoryId)
+    },
+    autoresponders: Array.isArray(body.autoresponders)
+      ? body.autoresponders
+          .filter((a) => a && String(a.trigger || '').trim() && String(a.response || '').trim())
+          .slice(0, 50)
+          .map((a) => ({ trigger: String(a.trigger).slice(0, 100), response: String(a.response).slice(0, 1000) }))
+      : cur.autoresponders,
+    selfRoles: Array.isArray(body.selfRoles)
+      ? body.selfRoles
+          .filter((r) => r && typeof r.roleId === 'string' && r.roleId.trim())
+          .slice(0, 25)
+          .map((r) => ({
+            roleId: String(r.roleId).trim(),
+            label: String(r.label || '').slice(0, 80),
+            emoji: String(r.emoji || '').slice(0, 40)
+          }))
+      : cur.selfRoles
+  };
+}
