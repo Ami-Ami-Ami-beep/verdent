@@ -127,6 +127,10 @@ function sanitizeConfig(guildId, body = {}) {
   const m = body.automod || {};
   const w = body.welcome || {};
   const l = body.logging || {};
+  const ap = body.applications || {};
+  const ar = body.autorole || {};
+  const lv = body.levels || {};
+  const sg = body.suggestions || {};
 
   const validActions = ['kick', 'ban', 'lockdown', 'alert'];
 
@@ -174,6 +178,38 @@ function sanitizeConfig(guildId, body = {}) {
       memberJoin: bool(l.memberJoin, cur.logging.memberJoin),
       memberLeave: bool(l.memberLeave, cur.logging.memberLeave),
       modActions: bool(l.modActions, cur.logging.modActions)
-    }
+    },
+    applications: {
+      enabled: bool(ap.enabled, cur.applications.enabled),
+      reviewChannelId: str(ap.reviewChannelId, cur.applications.reviewChannelId),
+      acceptedRoleId: str(ap.acceptedRoleId, cur.applications.acceptedRoleId),
+      panelMessage: str(ap.panelMessage, cur.applications.panelMessage).slice(0, 2000),
+      questions: list(ap.questions, cur.applications.questions).slice(0, 5)
+    },
+    autorole: {
+      enabled: bool(ar.enabled, cur.autorole.enabled),
+      roleId: str(ar.roleId, cur.autorole.roleId)
+    },
+    levels: {
+      enabled: bool(lv.enabled, cur.levels.enabled),
+      xpPerMessage: int(lv.xpPerMessage, cur.levels.xpPerMessage, 1, 100),
+      cooldownSeconds: int(lv.cooldownSeconds, cur.levels.cooldownSeconds, 0, 3600),
+      announce: bool(lv.announce, cur.levels.announce),
+      announceChannelId: str(lv.announceChannelId, cur.levels.announceChannelId)
+    },
+    suggestions: {
+      enabled: bool(sg.enabled, cur.suggestions.enabled),
+      channelId: str(sg.channelId, cur.suggestions.channelId)
+    },
+    selfRoles: Array.isArray(body.selfRoles)
+      ? body.selfRoles
+          .filter((r) => r && typeof r.roleId === 'string' && r.roleId.trim())
+          .slice(0, 25)
+          .map((r) => ({
+            roleId: String(r.roleId).trim(),
+            label: String(r.label || '').slice(0, 80),
+            emoji: String(r.emoji || '').slice(0, 40)
+          }))
+      : cur.selfRoles
   };
 }

@@ -12,6 +12,11 @@ export default {
 
     const cfg = getGuildConfig(member.guild.id);
 
+    // Autorole – automatisch eine Rolle beim Beitritt vergeben.
+    if (cfg.autorole.enabled && cfg.autorole.roleId) {
+      member.roles.add(cfg.autorole.roleId).catch(() => {});
+    }
+
     // Willkommensnachricht
     if (cfg.welcome.enabled && cfg.welcome.channelId) {
       const channel = await member.guild.channels.fetch(cfg.welcome.channelId).catch(() => null);

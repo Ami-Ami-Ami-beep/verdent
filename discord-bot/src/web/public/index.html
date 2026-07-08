@@ -160,6 +160,91 @@
             <label class="check"><input type="checkbox" data-path="logging.modActions" /> Moderations-Aktionen</label>
           </div>
         </section>
+
+        <!-- Bewerbungssystem -->
+        <section class="card" data-feature="applications">
+          <div class="card-head">
+            <h2>📝 Bewerbungssystem</h2>
+            <label class="switch"><input type="checkbox" data-path="applications.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Review-Kanal (wo Bewerbungen landen)
+              <select data-path="applications.reviewChannelId" data-source="textChannels"></select>
+            </label>
+            <label>Rolle bei Annahme (optional)
+              <select data-path="applications.acceptedRoleId" data-source="roles"></select>
+            </label>
+            <label>Panel-Text
+              <textarea data-path="applications.panelMessage" rows="2"></textarea>
+            </label>
+            <label>Fragen (eine pro Zeile, max. 5)
+              <textarea data-path="applications.questions" data-lines rows="4" placeholder="Wie alt bist du?&#10;Warum möchtest du ins Team?&#10;Wie viel Zeit hast du?"></textarea>
+            </label>
+            <p class="hint">Danach mit <code>/applicationpanel</code> den Button in einen Kanal posten.</p>
+          </div>
+        </section>
+
+        <!-- Selbstrollen -->
+        <section class="card" data-feature="selfroles-card">
+          <div class="card-head">
+            <h2>🎭 Selbstrollen</h2>
+          </div>
+          <div class="card-body">
+            <p class="hint">Rollen, die sich Mitglieder per Button selbst geben können. Danach mit <code>/rolepanel</code> posten.</p>
+            <div id="selfroles-editor"></div>
+            <button type="button" id="selfrole-add" class="btn-ghost">+ Rolle hinzufügen</button>
+          </div>
+        </section>
+
+        <!-- Autorole -->
+        <section class="card" data-feature="autorole">
+          <div class="card-head">
+            <h2>⭐ Autorole</h2>
+            <label class="switch"><input type="checkbox" data-path="autorole.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Rolle, die neue Mitglieder automatisch bekommen
+              <select data-path="autorole.roleId" data-source="roles"></select>
+            </label>
+          </div>
+        </section>
+
+        <!-- Level-System -->
+        <section class="card" data-feature="levels">
+          <div class="card-head">
+            <h2>📈 Level-System</h2>
+            <label class="switch"><input type="checkbox" data-path="levels.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <label>XP pro Nachricht
+                <input type="number" data-path="levels.xpPerMessage" min="1" max="100" />
+              </label>
+              <label>Cooldown (Sek.)
+                <input type="number" data-path="levels.cooldownSeconds" min="0" max="3600" />
+              </label>
+            </div>
+            <label class="check"><input type="checkbox" data-path="levels.announce" /> Level-Aufstiege ankündigen</label>
+            <label>Ankündigungs-Kanal (leer = im selben Kanal)
+              <select data-path="levels.announceChannelId" data-source="textChannels"></select>
+            </label>
+            <p class="hint">Mitglieder sehen ihren Rang mit <code>/rank</code>, die Bestenliste mit <code>/leaderboard</code>.</p>
+          </div>
+        </section>
+
+        <!-- Vorschläge -->
+        <section class="card" data-feature="suggestions">
+          <div class="card-head">
+            <h2>💡 Vorschläge</h2>
+            <label class="switch"><input type="checkbox" data-path="suggestions.enabled" /><span></span></label>
+          </div>
+          <div class="card-body">
+            <label>Vorschlags-Kanal
+              <select data-path="suggestions.channelId" data-source="textChannels"></select>
+            </label>
+            <p class="hint">Mitglieder reichen Vorschläge mit <code>/suggest</code> ein (mit 👍/👎-Abstimmung).</p>
+          </div>
+        </section>
       </div>
     </main>
 

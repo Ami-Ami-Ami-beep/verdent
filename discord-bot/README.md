@@ -13,7 +13,13 @@ inklusive einer **einfachen Konfigurations-Website** (Dashboard). Alles wird in 
 | 🔨 **AutoMod** | Einladungslinks, Spam, Massen-Erwähnungen, verbotene Wörter |
 | 👋 **Willkommen** | Begrüßungs- und Abschiedsnachrichten mit Platzhaltern |
 | 📋 **Logging** | Gelöschte/bearbeitete Nachrichten, Beitritte/Austritte, Mod-Aktionen |
+| 📝 **Bewerbungen** | Panel-Button → Fragen-Formular → Review-Kanal mit Annehmen/Ablehnen + Rolle & DM |
+| 🎭 **Selbstrollen** | Button-Panel, mit dem Mitglieder sich Rollen selbst geben/nehmen |
+| ⭐ **Autorole** | Automatische Rolle beim Serverbeitritt |
+| 📈 **Level-System** | XP fürs Schreiben, `/rank`, `/leaderboard`, Level-up-Nachrichten |
+| 💡 **Vorschläge** | `/suggest` postet in einen Kanal mit 👍/👎-Abstimmung |
 | ⚙️ **Moderation** | `/ban` `/kick` `/timeout` `/warn` `/warnings` `/clearwarnings` `/purge` `/lock` `/unlock` |
+| 🛠️ **Utility** | `/userinfo` `/serverinfo` `/avatar` `/ping` `/poll` `/slowmode` `/say` `/giveaway` |
 | 🌐 **Dashboard** | Web-Oberfläche zum Ein-/Ausschalten und Konfigurieren aller Features |
 
 ## 📦 Voraussetzungen

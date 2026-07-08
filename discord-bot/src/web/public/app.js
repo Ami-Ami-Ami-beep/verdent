@@ -47,6 +47,11 @@ $('#logout').addEventListener('click', async () => {
   showLogin();
 });
 
+$('#selfrole-add').addEventListener('click', () => {
+  addSelfRoleRow();
+  markDirty();
+});
+
 // ── Server-Auswahl ───────────────────────────────────────
 async function loadGuilds() {
   const guilds = await api('/api/guilds');
@@ -124,10 +129,13 @@ function fillForm() {
       [...el.options].forEach((o) => (o.selected = set.has(o.value)));
     } else if (el.dataset.list !== undefined) {
       el.value = Array.isArray(value) ? value.join(', ') : '';
+    } else if (el.dataset.lines !== undefined) {
+      el.value = Array.isArray(value) ? value.join('\n') : '';
     } else {
       el.value = value ?? '';
     }
   });
+  renderSelfRoles();
   updateDisabledCards();
 }
 
@@ -141,6 +149,8 @@ function readForm() {
       value = [...el.selectedOptions].map((o) => o.value);
     } else if (el.dataset.list !== undefined) {
       value = el.value.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (el.dataset.lines !== undefined) {
+      value = el.value.split('\n').map((s) => s.trim()).filter(Boolean);
     } else if (el.type === 'number') {
       value = Number.parseInt(el.value, 10) || 0;
     } else {
@@ -148,6 +158,7 @@ function readForm() {
     }
     setPath(cfg, el.dataset.path, value);
   });
+  cfg.selfRoles = readSelfRoles();
   return cfg;
 }
 
@@ -155,8 +166,50 @@ function readForm() {
 function updateDisabledCards() {
   document.querySelectorAll('.card[data-feature]').forEach((card) => {
     const toggle = card.querySelector(`[data-path="${card.dataset.feature}.enabled"]`);
+    if (!toggle) return; // Karten ohne eigenen Schalter (z. B. Selbstrollen) überspringen
     card.classList.toggle('disabled', !toggle.checked);
   });
+}
+
+// ── Selbstrollen-Editor ──────────────────────────────────
+function roleOptionsHtml(selectedId) {
+  const roles = currentMeta?.roles || [];
+  return ['<option value="">— Rolle wählen —</option>']
+    .concat(roles.map((r) => `<option value="${r.id}" ${r.id === selectedId ? 'selected' : ''}>@${r.name}</option>`))
+    .join('');
+}
+
+function addSelfRoleRow(entry = { roleId: '', label: '', emoji: '' }) {
+  const editor = $('#selfroles-editor');
+  const row = document.createElement('div');
+  row.className = 'selfrole-row';
+  row.innerHTML = `
+    <select class="sr-role">${roleOptionsHtml(entry.roleId)}</select>
+    <input class="sr-label" placeholder="Label (Button-Text)" maxlength="80" value="${(entry.label || '').replace(/"/g, '&quot;')}" />
+    <input class="sr-emoji" placeholder="Emoji" maxlength="40" value="${(entry.emoji || '').replace(/"/g, '&quot;')}" />
+    <button type="button" class="btn-ghost sr-remove">✕</button>`;
+  row.querySelector('.sr-remove').addEventListener('click', () => {
+    row.remove();
+    markDirty();
+  });
+  editor.appendChild(row);
+}
+
+function renderSelfRoles() {
+  const editor = $('#selfroles-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  (currentConfig.selfRoles || []).forEach((r) => addSelfRoleRow(r));
+}
+
+function readSelfRoles() {
+  return [...document.querySelectorAll('.selfrole-row')]
+    .map((row) => ({
+      roleId: row.querySelector('.sr-role').value,
+      label: row.querySelector('.sr-label').value.trim(),
+      emoji: row.querySelector('.sr-emoji').value.trim()
+    }))
+    .filter((r) => r.roleId);
 }
 
 // ── Änderungen erkennen / speichern ──────────────────────

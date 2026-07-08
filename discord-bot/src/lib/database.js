@@ -86,7 +86,52 @@ db.exec(`
     guild_id TEXT PRIMARY KEY,
     counter INTEGER NOT NULL DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS self_roles (
+    guild_id TEXT NOT NULL,
+    role_id TEXT NOT NULL,
+    label TEXT DEFAULT '',
+    emoji TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS user_levels (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    xp INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS application_questions (
+    guild_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    question TEXT NOT NULL
+  );
 `);
+
+// Neue Konfig-Spalten nachrüsten (für bereits bestehende Datenbanken).
+// Fügt fehlende Spalten der guilds-Tabelle hinzu.
+function ensureColumns() {
+  const existing = new Set(db.prepare('PRAGMA table_info(guilds)').all().map((c) => c.name));
+  const columns = {
+    applications_enabled: 'INTEGER DEFAULT 0',
+    applications_review_channel_id: "TEXT DEFAULT ''",
+    applications_accepted_role_id: "TEXT DEFAULT ''",
+    applications_panel_message: "TEXT DEFAULT 'Bewirb dich für unser Team! Klick auf den Button.'",
+    autorole_enabled: 'INTEGER DEFAULT 0',
+    autorole_role_id: "TEXT DEFAULT ''",
+    levels_enabled: 'INTEGER DEFAULT 0',
+    levels_xp_per_message: 'INTEGER DEFAULT 15',
+    levels_cooldown_seconds: 'INTEGER DEFAULT 60',
+    levels_announce: 'INTEGER DEFAULT 1',
+    levels_announce_channel_id: "TEXT DEFAULT ''",
+    suggestions_enabled: 'INTEGER DEFAULT 0',
+    suggestions_channel_id: "TEXT DEFAULT ''"
+  };
+  for (const [name, def] of Object.entries(columns)) {
+    if (!existing.has(name)) db.exec(`ALTER TABLE guilds ADD COLUMN ${name} ${def}`);
+  }
+}
+ensureColumns();
 
 // Spalten des guilds-Datensatzes → verschachteltes Konfig-Objekt.
 function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
@@ -134,7 +179,30 @@ function rowToConfig(guildId, row, bannedWords, ignoredRoles, staffRoles) {
       memberJoin: !!row.logging_member_join,
       memberLeave: !!row.logging_member_leave,
       modActions: !!row.logging_mod_actions
-    }
+    },
+    applications: {
+      enabled: !!row.applications_enabled,
+      reviewChannelId: row.applications_review_channel_id || '',
+      acceptedRoleId: row.applications_accepted_role_id || '',
+      panelMessage: row.applications_panel_message || '',
+      questions: [] // wird separat geladen
+    },
+    autorole: {
+      enabled: !!row.autorole_enabled,
+      roleId: row.autorole_role_id || ''
+    },
+    levels: {
+      enabled: !!row.levels_enabled,
+      xpPerMessage: row.levels_xp_per_message ?? 15,
+      cooldownSeconds: row.levels_cooldown_seconds ?? 60,
+      announce: row.levels_announce == null ? true : !!row.levels_announce,
+      announceChannelId: row.levels_announce_channel_id || ''
+    },
+    suggestions: {
+      enabled: !!row.suggestions_enabled,
+      channelId: row.suggestions_channel_id || ''
+    },
+    selfRoles: [] // wird separat geladen
   };
 }
 
@@ -146,6 +214,8 @@ const selectGuild = db.prepare('SELECT * FROM guilds WHERE guild_id = ?');
 const selectWords = db.prepare('SELECT word FROM automod_banned_words WHERE guild_id = ?');
 const selectRoles = db.prepare('SELECT role_id FROM automod_ignored_roles WHERE guild_id = ?');
 const selectStaffRoles = db.prepare('SELECT role_id FROM ticket_staff_roles WHERE guild_id = ?');
+const selectQuestions = db.prepare('SELECT question FROM application_questions WHERE guild_id = ? ORDER BY position');
+const selectSelfRoles = db.prepare('SELECT role_id, label, emoji FROM self_roles WHERE guild_id = ?');
 
 export function getGuildConfig(guildId) {
   ensureGuild.run(guildId);
@@ -157,7 +227,10 @@ export function getGuildConfig(guildId) {
   if (staffRoles.length === 0 && row.tickets_staff_role_id) {
     staffRoles = [row.tickets_staff_role_id];
   }
-  return rowToConfig(guildId, row, words, roles, staffRoles);
+  const cfg = rowToConfig(guildId, row, words, roles, staffRoles);
+  cfg.applications.questions = selectQuestions.all(guildId).map((r) => r.question);
+  cfg.selfRoles = selectSelfRoles.all(guildId).map((r) => ({ roleId: r.role_id, label: r.label, emoji: r.emoji }));
+  return cfg;
 }
 
 const updateGuild = db.prepare(`
@@ -179,7 +252,16 @@ const updateGuild = db.prepare(`
     logging_enabled=@logging_enabled, logging_channel_id=@logging_channel_id,
     logging_message_delete=@logging_message_delete, logging_message_edit=@logging_message_edit,
     logging_member_join=@logging_member_join, logging_member_leave=@logging_member_leave,
-    logging_mod_actions=@logging_mod_actions
+    logging_mod_actions=@logging_mod_actions,
+    applications_enabled=@applications_enabled,
+    applications_review_channel_id=@applications_review_channel_id,
+    applications_accepted_role_id=@applications_accepted_role_id,
+    applications_panel_message=@applications_panel_message,
+    autorole_enabled=@autorole_enabled, autorole_role_id=@autorole_role_id,
+    levels_enabled=@levels_enabled, levels_xp_per_message=@levels_xp_per_message,
+    levels_cooldown_seconds=@levels_cooldown_seconds, levels_announce=@levels_announce,
+    levels_announce_channel_id=@levels_announce_channel_id,
+    suggestions_enabled=@suggestions_enabled, suggestions_channel_id=@suggestions_channel_id
   WHERE guild_id=@guild_id
 `);
 
@@ -189,6 +271,10 @@ const deleteRoles = db.prepare('DELETE FROM automod_ignored_roles WHERE guild_id
 const insertRole = db.prepare('INSERT INTO automod_ignored_roles (guild_id, role_id) VALUES (?, ?)');
 const deleteStaffRoles = db.prepare('DELETE FROM ticket_staff_roles WHERE guild_id = ?');
 const insertStaffRole = db.prepare('INSERT INTO ticket_staff_roles (guild_id, role_id) VALUES (?, ?)');
+const deleteQuestions = db.prepare('DELETE FROM application_questions WHERE guild_id = ?');
+const insertQuestion = db.prepare('INSERT INTO application_questions (guild_id, position, question) VALUES (?, ?, ?)');
+const deleteSelfRoles = db.prepare('DELETE FROM self_roles WHERE guild_id = ?');
+const insertSelfRole = db.prepare('INSERT INTO self_roles (guild_id, role_id, label, emoji) VALUES (?, ?, ?, ?)');
 
 export const saveGuildConfig = db.transaction((cfg) => {
   ensureGuild.run(cfg.guildId);
@@ -224,7 +310,20 @@ export const saveGuildConfig = db.transaction((cfg) => {
     logging_message_edit: b(cfg.logging.messageEdit),
     logging_member_join: b(cfg.logging.memberJoin),
     logging_member_leave: b(cfg.logging.memberLeave),
-    logging_mod_actions: b(cfg.logging.modActions)
+    logging_mod_actions: b(cfg.logging.modActions),
+    applications_enabled: b(cfg.applications?.enabled),
+    applications_review_channel_id: cfg.applications?.reviewChannelId || '',
+    applications_accepted_role_id: cfg.applications?.acceptedRoleId || '',
+    applications_panel_message: cfg.applications?.panelMessage || '',
+    autorole_enabled: b(cfg.autorole?.enabled),
+    autorole_role_id: cfg.autorole?.roleId || '',
+    levels_enabled: b(cfg.levels?.enabled),
+    levels_xp_per_message: cfg.levels?.xpPerMessage ?? 15,
+    levels_cooldown_seconds: cfg.levels?.cooldownSeconds ?? 60,
+    levels_announce: b(cfg.levels?.announce),
+    levels_announce_channel_id: cfg.levels?.announceChannelId || '',
+    suggestions_enabled: b(cfg.suggestions?.enabled),
+    suggestions_channel_id: cfg.suggestions?.channelId || ''
   });
 
   deleteWords.run(cfg.guildId);
@@ -241,6 +340,16 @@ export const saveGuildConfig = db.transaction((cfg) => {
   for (const r of cfg.tickets.staffRoleIds || []) {
     const role = String(r).trim();
     if (role) insertStaffRole.run(cfg.guildId, role);
+  }
+  deleteQuestions.run(cfg.guildId);
+  (cfg.applications?.questions || []).forEach((q, i) => {
+    const question = String(q).trim();
+    if (question) insertQuestion.run(cfg.guildId, i, question.slice(0, 300));
+  });
+  deleteSelfRoles.run(cfg.guildId);
+  for (const sr of cfg.selfRoles || []) {
+    const role = String(sr.roleId || '').trim();
+    if (role) insertSelfRole.run(cfg.guildId, role, String(sr.label || '').slice(0, 80), String(sr.emoji || '').slice(0, 40));
   }
 });
 
@@ -265,6 +374,44 @@ export function getWarnings(guildId, userId) {
 
 export function clearWarnings(guildId, userId) {
   deleteWarnings.run(guildId, userId);
+}
+
+// ── Level-System (XP) ────────────────────────────────────
+const upsertXp = db.prepare(`
+  INSERT INTO user_levels (guild_id, user_id, xp) VALUES (?, ?, ?)
+  ON CONFLICT(guild_id, user_id) DO UPDATE SET xp = xp + excluded.xp
+`);
+const selectXp = db.prepare('SELECT xp FROM user_levels WHERE guild_id=? AND user_id=?');
+const countAbove = db.prepare('SELECT COUNT(*) AS n FROM user_levels WHERE guild_id=? AND xp > ?');
+const topXp = db.prepare('SELECT user_id, xp FROM user_levels WHERE guild_id=? ORDER BY xp DESC LIMIT ?');
+
+// XP → Level und umgekehrt (einfache, gleichmäßige Kurve).
+export function levelFromXp(xp) {
+  return Math.floor(Math.sqrt((xp || 0) / 100));
+}
+export function xpForLevel(level) {
+  return level * level * 100;
+}
+
+/** Vergibt XP und meldet, ob ein Level-Aufstieg passiert ist. */
+export function addXp(guildId, userId, amount) {
+  const before = selectXp.get(guildId, userId)?.xp ?? 0;
+  upsertXp.run(guildId, userId, amount);
+  const after = before + amount;
+  const oldLevel = levelFromXp(before);
+  const newLevel = levelFromXp(after);
+  return { xp: after, level: newLevel, leveledUp: newLevel > oldLevel };
+}
+
+export function getUserLevel(guildId, userId) {
+  const xp = selectXp.get(guildId, userId)?.xp ?? 0;
+  const level = levelFromXp(xp);
+  const rank = countAbove.get(guildId, xp).n + 1;
+  return { xp, level, rank };
+}
+
+export function getLeaderboard(guildId, limit = 10) {
+  return topXp.all(guildId, limit).map((r) => ({ userId: r.user_id, xp: r.xp, level: levelFromXp(r.xp) }));
 }
 
 // ── Tickets ──────────────────────────────────────────────
