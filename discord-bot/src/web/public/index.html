@@ -3,16 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verdent Bot – Dashboard</title>
+  <title>Amu Bot – Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- Login -->
   <div id="login" class="login-screen">
     <form id="login-form" class="login-box">
-      <h1>🤖 Verdent Bot</h1>
+      <div class="login-logo"><img src="icon.svg" alt="Amu Bot" /></div>
+      <h1>Amu Bot</h1>
       <p>Konfigurations-Dashboard</p>
-      <input type="password" id="password" placeholder="Passwort" autocomplete="current-password" />
+      <label class="field">
+        <span>Passwort</span>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </label>
       <button type="submit">Anmelden</button>
       <div id="login-error" class="error"></div>
     </form>
@@ -20,308 +27,323 @@
 
   <!-- Dashboard -->
   <div id="app" class="hidden">
-    <header>
-      <div class="brand">🤖 Verdent Bot</div>
-      <div class="header-right">
-        <select id="guild-select"></select>
-        <button id="logout" class="btn-ghost">Abmelden</button>
-      </div>
-    </header>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark"><img src="icon.svg" alt="" /></span><span class="brand-name">Amu Bot</span></div>
+      <nav id="feature-nav" class="feature-nav"></nav>
+      <div class="sidebar-foot">Dashboard v1.0</div>
+    </aside>
 
-    <main id="config-area">
-      <div id="no-guild" class="placeholder">Bitte oben einen Server auswählen.</div>
+    <div class="content">
+      <header>
+        <div class="header-title">
+          <span class="header-kicker">Server-Konfiguration</span>
+          <span class="header-sub">Wähle einen Server und passe die Funktionen an</span>
+        </div>
+        <div class="header-right">
+          <select id="guild-select"></select>
+          <button id="logout" class="btn-ghost">Abmelden</button>
+        </div>
+      </header>
 
-      <div id="config" class="hidden">
-        <!-- Tickets -->
-        <section class="card" data-feature="tickets">
-          <div class="card-head">
-            <h2>🎫 Ticket-System</h2>
-            <label class="switch"><input type="checkbox" data-path="tickets.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Log-Kanal für Transkripte
-              <select data-path="tickets.logChannelId" data-source="textChannels"></select>
-            </label>
-            <label>Panel-Text (Überschrift des Panels)
-              <textarea data-path="tickets.panelMessage" rows="2"></textarea>
-            </label>
-            <hr class="sep" />
-            <p class="hint"><strong>Ticket-Arten</strong> – jede Art bekommt einen eigenen Button im Panel (eigene Kategorie, Team-Rollen und Begrüßung).</p>
-            <div id="ticket-types-editor"></div>
-            <button type="button" id="ticket-type-add" class="btn-ghost">+ Ticket-Art hinzufügen</button>
-            <p class="hint">Danach mit <code>/ticketpanel</code> das Panel in einen Kanal posten.</p>
-          </div>
-        </section>
+      <main id="config-area">
+        <div id="no-guild" class="placeholder">
+          <div class="placeholder-icon">🗂️</div>
+          <div class="placeholder-title">Kein Server ausgewählt</div>
+          <div class="placeholder-text">Bitte oben rechts einen Server auswählen.</div>
+        </div>
 
-        <!-- Anti-Raid -->
-        <section class="card" data-feature="antiraid">
-          <div class="card-head">
-            <h2>🛡️ Anti-Raid</h2>
-            <label class="switch"><input type="checkbox" data-path="antiraid.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <label>Beitritte (Schwelle)
-                <input type="number" data-path="antiraid.joinThreshold" min="2" max="100" />
+        <div id="config" class="hidden">
+          <!-- Tickets -->
+          <section class="card" data-feature="tickets">
+            <div class="card-head">
+              <h2>🎫 Ticket-System</h2>
+              <label class="switch"><input type="checkbox" data-path="tickets.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Log-Kanal für Transkripte
+                <select data-path="tickets.logChannelId" data-source="textChannels"></select>
               </label>
-              <label>Zeitfenster (Sek.)
-                <input type="number" data-path="antiraid.joinWindowSeconds" min="1" max="600" />
+              <label>Panel-Text (Überschrift des Panels)
+                <textarea data-path="tickets.panelMessage" rows="2"></textarea>
+              </label>
+              <hr class="sep" />
+              <p class="hint"><strong>Ticket-Arten</strong> – jede Art bekommt einen eigenen Button im Panel (eigene Kategorie, Team-Rollen und Begrüßung).</p>
+              <div id="ticket-types-editor"></div>
+              <button type="button" id="ticket-type-add" class="btn-ghost">+ Ticket-Art hinzufügen</button>
+              <p class="hint">Danach mit <code>/ticketpanel</code> das Panel in einen Kanal posten.</p>
+            </div>
+          </section>
+
+          <!-- Anti-Raid -->
+          <section class="card" data-feature="antiraid">
+            <div class="card-head">
+              <h2>🛡️ Anti-Raid</h2>
+              <label class="switch"><input type="checkbox" data-path="antiraid.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <label>Beitritte (Schwelle)
+                  <input type="number" data-path="antiraid.joinThreshold" min="2" max="100" />
+                </label>
+                <label>Zeitfenster (Sek.)
+                  <input type="number" data-path="antiraid.joinWindowSeconds" min="1" max="600" />
+                </label>
+              </div>
+              <label>Aktion bei Raid
+                <select data-path="antiraid.action">
+                  <option value="kick">Neue Mitglieder kicken</option>
+                  <option value="ban">Neue Mitglieder bannen</option>
+                  <option value="lockdown">Server sperren (Lockdown)</option>
+                  <option value="alert">Nur benachrichtigen</option>
+                </select>
+              </label>
+              <label>Mindest-Kontoalter in Minuten (0 = aus)
+                <input type="number" data-path="antiraid.minAccountAgeMinutes" min="0" max="525600" />
+              </label>
+              <label>Alarm-Kanal
+                <select data-path="antiraid.alertChannelId" data-source="textChannels"></select>
               </label>
             </div>
-            <label>Aktion bei Raid
-              <select data-path="antiraid.action">
-                <option value="kick">Neue Mitglieder kicken</option>
-                <option value="ban">Neue Mitglieder bannen</option>
-                <option value="lockdown">Server sperren (Lockdown)</option>
-                <option value="alert">Nur benachrichtigen</option>
-              </select>
-            </label>
-            <label>Mindest-Kontoalter in Minuten (0 = aus)
-              <input type="number" data-path="antiraid.minAccountAgeMinutes" min="0" max="525600" />
-            </label>
-            <label>Alarm-Kanal
-              <select data-path="antiraid.alertChannelId" data-source="textChannels"></select>
-            </label>
-          </div>
-        </section>
+          </section>
 
-        <!-- AutoMod -->
-        <section class="card" data-feature="automod">
-          <div class="card-head">
-            <h2>🔨 AutoMod</h2>
-            <label class="switch"><input type="checkbox" data-path="automod.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label class="check"><input type="checkbox" data-path="automod.antiInvite" /> Einladungslinks löschen</label>
-            <label class="check"><input type="checkbox" data-path="automod.antiMassMention" /> Massen-Erwähnungen blockieren</label>
-            <div class="row">
-              <label>Max. Erwähnungen
-                <input type="number" data-path="automod.maxMentions" min="1" max="50" />
+          <!-- AutoMod -->
+          <section class="card" data-feature="automod">
+            <div class="card-head">
+              <h2>🔨 AutoMod</h2>
+              <label class="switch"><input type="checkbox" data-path="automod.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label class="check"><input type="checkbox" data-path="automod.antiInvite" /> Einladungslinks löschen</label>
+              <label class="check"><input type="checkbox" data-path="automod.antiMassMention" /> Massen-Erwähnungen blockieren</label>
+              <div class="row">
+                <label>Max. Erwähnungen
+                  <input type="number" data-path="automod.maxMentions" min="1" max="50" />
+                </label>
+              </div>
+              <label class="check"><input type="checkbox" data-path="automod.antiSpam" /> Spam-Schutz</label>
+              <div class="row">
+                <label>Nachrichten
+                  <input type="number" data-path="automod.spamMessageCount" min="2" max="50" />
+                </label>
+                <label>in Sekunden
+                  <input type="number" data-path="automod.spamWindowSeconds" min="1" max="60" />
+                </label>
+              </div>
+              <label>Verbotene Wörter (Komma-getrennt)
+                <textarea data-path="automod.bannedWords" data-list rows="2" placeholder="wort1, wort2, wort3"></textarea>
+              </label>
+              <label>Ausgenommene Rollen
+                <select data-path="automod.ignoredRoleIds" data-source="roles" multiple size="4"></select>
               </label>
             </div>
-            <label class="check"><input type="checkbox" data-path="automod.antiSpam" /> Spam-Schutz</label>
-            <div class="row">
-              <label>Nachrichten
-                <input type="number" data-path="automod.spamMessageCount" min="2" max="50" />
+          </section>
+
+          <!-- Welcome -->
+          <section class="card" data-feature="welcome">
+            <div class="card-head">
+              <h2>👋 Willkommen &amp; Abschied</h2>
+              <label class="switch"><input type="checkbox" data-path="welcome.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Kanal
+                <select data-path="welcome.channelId" data-source="textChannels"></select>
               </label>
-              <label>in Sekunden
-                <input type="number" data-path="automod.spamWindowSeconds" min="1" max="60" />
+              <label>Willkommensnachricht
+                <textarea data-path="welcome.message" rows="2"></textarea>
+              </label>
+              <label class="check"><input type="checkbox" data-path="welcome.leaveEnabled" /> Abschiedsnachricht senden</label>
+              <label>Abschiedsnachricht
+                <textarea data-path="welcome.leaveMessage" rows="2"></textarea>
+              </label>
+              <p class="hint">Platzhalter: <code>{user}</code> <code>{tag}</code> <code>{server}</code> <code>{count}</code></p>
+            </div>
+          </section>
+
+          <!-- Logging -->
+          <section class="card" data-feature="logging">
+            <div class="card-head">
+              <h2>📋 Logging</h2>
+              <label class="switch"><input type="checkbox" data-path="logging.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Log-Kanal
+                <select data-path="logging.channelId" data-source="textChannels"></select>
+              </label>
+              <label class="check"><input type="checkbox" data-path="logging.messageDelete" /> Gelöschte Nachrichten</label>
+              <label class="check"><input type="checkbox" data-path="logging.messageEdit" /> Bearbeitete Nachrichten</label>
+              <label class="check"><input type="checkbox" data-path="logging.memberJoin" /> Beitritte</label>
+              <label class="check"><input type="checkbox" data-path="logging.memberLeave" /> Austritte</label>
+              <label class="check"><input type="checkbox" data-path="logging.modActions" /> Moderations-Aktionen</label>
+            </div>
+          </section>
+
+          <!-- Bewerbungssystem -->
+          <section class="card" data-feature="applications">
+            <div class="card-head">
+              <h2>📝 Bewerbungssystem</h2>
+              <label class="switch"><input type="checkbox" data-path="applications.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Panel-Text (Überschrift des Panels)
+                <textarea data-path="applications.panelMessage" rows="2"></textarea>
+              </label>
+              <hr class="sep" />
+              <p class="hint"><strong>Bewerbungs-Arten</strong> – jede Art bekommt einen eigenen Button (eigene Fragen, eigener Review-Kanal, eigene Rolle bei Annahme).</p>
+              <div id="app-types-editor"></div>
+              <button type="button" id="app-type-add" class="btn-ghost">+ Bewerbungs-Art hinzufügen</button>
+              <p class="hint">Danach mit <code>/applicationpanel</code> das Panel in einen Kanal posten.</p>
+            </div>
+          </section>
+
+          <!-- Selbstrollen -->
+          <section class="card" data-feature="selfroles-card">
+            <div class="card-head">
+              <h2>🎭 Selbstrollen</h2>
+            </div>
+            <div class="card-body">
+              <p class="hint">Rollen, die sich Mitglieder per Button selbst geben können. Danach mit <code>/rolepanel</code> posten.</p>
+              <div id="selfroles-editor"></div>
+              <button type="button" id="selfrole-add" class="btn-ghost">+ Rolle hinzufügen</button>
+            </div>
+          </section>
+
+          <!-- Autorole -->
+          <section class="card" data-feature="autorole">
+            <div class="card-head">
+              <h2>⭐ Autorole</h2>
+              <label class="switch"><input type="checkbox" data-path="autorole.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Rolle, die neue Mitglieder automatisch bekommen
+                <select data-path="autorole.roleId" data-source="roles"></select>
               </label>
             </div>
-            <label>Verbotene Wörter (Komma-getrennt)
-              <textarea data-path="automod.bannedWords" data-list rows="2" placeholder="wort1, wort2, wort3"></textarea>
-            </label>
-            <label>Ausgenommene Rollen
-              <select data-path="automod.ignoredRoleIds" data-source="roles" multiple size="4"></select>
-            </label>
-          </div>
-        </section>
+          </section>
 
-        <!-- Welcome -->
-        <section class="card" data-feature="welcome">
-          <div class="card-head">
-            <h2>👋 Willkommen &amp; Abschied</h2>
-            <label class="switch"><input type="checkbox" data-path="welcome.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Kanal
-              <select data-path="welcome.channelId" data-source="textChannels"></select>
-            </label>
-            <label>Willkommensnachricht
-              <textarea data-path="welcome.message" rows="2"></textarea>
-            </label>
-            <label class="check"><input type="checkbox" data-path="welcome.leaveEnabled" /> Abschiedsnachricht senden</label>
-            <label>Abschiedsnachricht
-              <textarea data-path="welcome.leaveMessage" rows="2"></textarea>
-            </label>
-            <p class="hint">Platzhalter: <code>{user}</code> <code>{tag}</code> <code>{server}</code> <code>{count}</code></p>
-          </div>
-        </section>
-
-        <!-- Logging -->
-        <section class="card" data-feature="logging">
-          <div class="card-head">
-            <h2>📋 Logging</h2>
-            <label class="switch"><input type="checkbox" data-path="logging.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Log-Kanal
-              <select data-path="logging.channelId" data-source="textChannels"></select>
-            </label>
-            <label class="check"><input type="checkbox" data-path="logging.messageDelete" /> Gelöschte Nachrichten</label>
-            <label class="check"><input type="checkbox" data-path="logging.messageEdit" /> Bearbeitete Nachrichten</label>
-            <label class="check"><input type="checkbox" data-path="logging.memberJoin" /> Beitritte</label>
-            <label class="check"><input type="checkbox" data-path="logging.memberLeave" /> Austritte</label>
-            <label class="check"><input type="checkbox" data-path="logging.modActions" /> Moderations-Aktionen</label>
-          </div>
-        </section>
-
-        <!-- Bewerbungssystem -->
-        <section class="card" data-feature="applications">
-          <div class="card-head">
-            <h2>📝 Bewerbungssystem</h2>
-            <label class="switch"><input type="checkbox" data-path="applications.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Panel-Text (Überschrift des Panels)
-              <textarea data-path="applications.panelMessage" rows="2"></textarea>
-            </label>
-            <hr class="sep" />
-            <p class="hint"><strong>Bewerbungs-Arten</strong> – jede Art bekommt einen eigenen Button (eigene Fragen, eigener Review-Kanal, eigene Rolle bei Annahme).</p>
-            <div id="app-types-editor"></div>
-            <button type="button" id="app-type-add" class="btn-ghost">+ Bewerbungs-Art hinzufügen</button>
-            <p class="hint">Danach mit <code>/applicationpanel</code> das Panel in einen Kanal posten.</p>
-          </div>
-        </section>
-
-        <!-- Selbstrollen -->
-        <section class="card" data-feature="selfroles-card">
-          <div class="card-head">
-            <h2>🎭 Selbstrollen</h2>
-          </div>
-          <div class="card-body">
-            <p class="hint">Rollen, die sich Mitglieder per Button selbst geben können. Danach mit <code>/rolepanel</code> posten.</p>
-            <div id="selfroles-editor"></div>
-            <button type="button" id="selfrole-add" class="btn-ghost">+ Rolle hinzufügen</button>
-          </div>
-        </section>
-
-        <!-- Autorole -->
-        <section class="card" data-feature="autorole">
-          <div class="card-head">
-            <h2>⭐ Autorole</h2>
-            <label class="switch"><input type="checkbox" data-path="autorole.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Rolle, die neue Mitglieder automatisch bekommen
-              <select data-path="autorole.roleId" data-source="roles"></select>
-            </label>
-          </div>
-        </section>
-
-        <!-- Level-System -->
-        <section class="card" data-feature="levels">
-          <div class="card-head">
-            <h2>📈 Level-System</h2>
-            <label class="switch"><input type="checkbox" data-path="levels.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <label>XP pro Nachricht
-                <input type="number" data-path="levels.xpPerMessage" min="1" max="100" />
-              </label>
-              <label>Cooldown (Sek.)
-                <input type="number" data-path="levels.cooldownSeconds" min="0" max="3600" />
-              </label>
+          <!-- Level-System -->
+          <section class="card" data-feature="levels">
+            <div class="card-head">
+              <h2>📈 Level-System</h2>
+              <label class="switch"><input type="checkbox" data-path="levels.enabled" /><span></span></label>
             </div>
-            <label class="check"><input type="checkbox" data-path="levels.announce" /> Level-Aufstiege ankündigen</label>
-            <label>Ankündigungs-Kanal (leer = im selben Kanal)
-              <select data-path="levels.announceChannelId" data-source="textChannels"></select>
-            </label>
-            <p class="hint">Mitglieder sehen ihren Rang mit <code>/rank</code>, die Bestenliste mit <code>/leaderboard</code>.</p>
-          </div>
-        </section>
-
-        <!-- Vorschläge -->
-        <section class="card" data-feature="suggestions">
-          <div class="card-head">
-            <h2>💡 Vorschläge</h2>
-            <label class="switch"><input type="checkbox" data-path="suggestions.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Vorschlags-Kanal
-              <select data-path="suggestions.channelId" data-source="textChannels"></select>
-            </label>
-            <p class="hint">Mitglieder reichen Vorschläge mit <code>/suggest</code> ein (mit 👍/👎-Abstimmung).</p>
-          </div>
-        </section>
-
-        <!-- Live-Benachrichtigung -->
-        <section class="card" data-feature="live">
-          <div class="card-head">
-            <h2>🔴 Live-Benachrichtigung</h2>
-            <label class="switch"><input type="checkbox" data-path="live.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Benachrichtigungs-Kanal
-              <select data-path="live.channelId" data-source="textChannels"></select>
-            </label>
-            <label>Nachricht
-              <textarea data-path="live.message" rows="2"></textarea>
-            </label>
-            <label>Nur diese Rolle melden (optional)
-              <select data-path="live.requiredRoleId" data-source="roles"></select>
-            </label>
-            <p class="hint">Platzhalter: <code>{user}</code> <code>{url}</code> <code>{game}</code>. ⚠️ Benötigt den <strong>Presence Intent</strong> (im Developer Portal aktivieren) und <code>PRESENCE_INTENT=1</code> in der config.txt.</p>
-          </div>
-        </section>
-
-        <!-- Starboard -->
-        <section class="card" data-feature="starboard">
-          <div class="card-head">
-            <h2>⭐ Starboard</h2>
-            <label class="switch"><input type="checkbox" data-path="starboard.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Starboard-Kanal
-              <select data-path="starboard.channelId" data-source="textChannels"></select>
-            </label>
-            <div class="row">
-              <label>Benötigte Reaktionen
-                <input type="number" data-path="starboard.threshold" min="1" max="100" />
+            <div class="card-body">
+              <div class="row">
+                <label>XP pro Nachricht
+                  <input type="number" data-path="levels.xpPerMessage" min="1" max="100" />
+                </label>
+                <label>Cooldown (Sek.)
+                  <input type="number" data-path="levels.cooldownSeconds" min="0" max="3600" />
+                </label>
+              </div>
+              <label class="check"><input type="checkbox" data-path="levels.announce" /> Level-Aufstiege ankündigen</label>
+              <label>Ankündigungs-Kanal (leer = im selben Kanal)
+                <select data-path="levels.announceChannelId" data-source="textChannels"></select>
               </label>
-              <label>Emoji
-                <input type="text" data-path="starboard.emoji" maxlength="40" />
-              </label>
+              <p class="hint">Mitglieder sehen ihren Rang mit <code>/rank</code>, die Bestenliste mit <code>/leaderboard</code>.</p>
             </div>
-            <p class="hint">Bekommt eine Nachricht genug Emoji-Reaktionen, wird sie in den Starboard-Kanal kopiert.</p>
-          </div>
-        </section>
+          </section>
 
-        <!-- Zählkanal -->
-        <section class="card" data-feature="counting">
-          <div class="card-head">
-            <h2>🔢 Zählkanal</h2>
-            <label class="switch"><input type="checkbox" data-path="counting.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Zähl-Kanal
-              <select data-path="counting.channelId" data-source="textChannels"></select>
-            </label>
-            <p class="hint">Mitglieder zählen abwechselnd hoch (1, 2, 3 …). Falsche Zahl oder zweimal dieselbe Person bricht die Kette.</p>
-          </div>
-        </section>
+          <!-- Vorschläge -->
+          <section class="card" data-feature="suggestions">
+            <div class="card-head">
+              <h2>💡 Vorschläge</h2>
+              <label class="switch"><input type="checkbox" data-path="suggestions.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Vorschlags-Kanal
+                <select data-path="suggestions.channelId" data-source="textChannels"></select>
+              </label>
+              <p class="hint">Mitglieder reichen Vorschläge mit <code>/suggest</code> ein (mit 👍/👎-Abstimmung).</p>
+            </div>
+          </section>
 
-        <!-- Temp-Voice -->
-        <section class="card" data-feature="tempvoice">
-          <div class="card-head">
-            <h2>🔊 Temp-Sprachkanäle</h2>
-            <label class="switch"><input type="checkbox" data-path="tempvoice.enabled" /><span></span></label>
-          </div>
-          <div class="card-body">
-            <label>Hub-Sprachkanal („Join to Create")
-              <select data-path="tempvoice.hubChannelId" data-source="voiceChannels"></select>
-            </label>
-            <label>Kategorie für neue Kanäle (optional)
-              <select data-path="tempvoice.categoryId" data-source="categories"></select>
-            </label>
-            <p class="hint">Wer den Hub-Kanal betritt, bekommt einen eigenen Sprachkanal, der beim Verlassen automatisch gelöscht wird.</p>
-          </div>
-        </section>
+          <!-- Live-Benachrichtigung -->
+          <section class="card" data-feature="live">
+            <div class="card-head">
+              <h2>🔴 Live-Benachrichtigung</h2>
+              <label class="switch"><input type="checkbox" data-path="live.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Benachrichtigungs-Kanal
+                <select data-path="live.channelId" data-source="textChannels"></select>
+              </label>
+              <label>Nachricht
+                <textarea data-path="live.message" rows="2"></textarea>
+              </label>
+              <label>Nur diese Rolle melden (optional)
+                <select data-path="live.requiredRoleId" data-source="roles"></select>
+              </label>
+              <p class="hint">Platzhalter: <code>{user}</code> <code>{url}</code> <code>{game}</code>. ⚠️ Benötigt den <strong>Presence Intent</strong> (im Developer Portal aktivieren) und <code>PRESENCE_INTENT=1</code> in der config.txt.</p>
+            </div>
+          </section>
 
-        <!-- Autoresponder -->
-        <section class="card" data-feature="autoresponder-card">
-          <div class="card-head">
-            <h2>💬 Autoresponder</h2>
-          </div>
-          <div class="card-body">
-            <p class="hint">Automatische Antworten: enthält eine Nachricht das Auslöser-Wort, antwortet der Bot.</p>
-            <div id="autoresponder-editor"></div>
-            <button type="button" id="autoresponder-add" class="btn-ghost">+ Antwort hinzufügen</button>
-          </div>
-        </section>
-      </div>
-    </main>
+          <!-- Starboard -->
+          <section class="card" data-feature="starboard">
+            <div class="card-head">
+              <h2>⭐ Starboard</h2>
+              <label class="switch"><input type="checkbox" data-path="starboard.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Starboard-Kanal
+                <select data-path="starboard.channelId" data-source="textChannels"></select>
+              </label>
+              <div class="row">
+                <label>Benötigte Reaktionen
+                  <input type="number" data-path="starboard.threshold" min="1" max="100" />
+                </label>
+                <label>Emoji
+                  <input type="text" data-path="starboard.emoji" maxlength="40" />
+                </label>
+              </div>
+              <p class="hint">Bekommt eine Nachricht genug Emoji-Reaktionen, wird sie in den Starboard-Kanal kopiert.</p>
+            </div>
+          </section>
+
+          <!-- Zählkanal -->
+          <section class="card" data-feature="counting">
+            <div class="card-head">
+              <h2>🔢 Zählkanal</h2>
+              <label class="switch"><input type="checkbox" data-path="counting.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Zähl-Kanal
+                <select data-path="counting.channelId" data-source="textChannels"></select>
+              </label>
+              <p class="hint">Mitglieder zählen abwechselnd hoch (1, 2, 3 …). Falsche Zahl oder zweimal dieselbe Person bricht die Kette.</p>
+            </div>
+          </section>
+
+          <!-- Temp-Voice -->
+          <section class="card" data-feature="tempvoice">
+            <div class="card-head">
+              <h2>🔊 Temp-Sprachkanäle</h2>
+              <label class="switch"><input type="checkbox" data-path="tempvoice.enabled" /><span></span></label>
+            </div>
+            <div class="card-body">
+              <label>Hub-Sprachkanal („Join to Create")
+                <select data-path="tempvoice.hubChannelId" data-source="voiceChannels"></select>
+              </label>
+              <label>Kategorie für neue Kanäle (optional)
+                <select data-path="tempvoice.categoryId" data-source="categories"></select>
+              </label>
+              <p class="hint">Wer den Hub-Kanal betritt, bekommt einen eigenen Sprachkanal, der beim Verlassen automatisch gelöscht wird.</p>
+            </div>
+          </section>
+
+          <!-- Autoresponder -->
+          <section class="card" data-feature="autoresponder-card">
+            <div class="card-head">
+              <h2>💬 Autoresponder</h2>
+            </div>
+            <div class="card-body">
+              <p class="hint">Automatische Antworten: enthält eine Nachricht das Auslöser-Wort, antwortet der Bot.</p>
+              <div id="autoresponder-editor"></div>
+              <button type="button" id="autoresponder-add" class="btn-ghost">+ Antwort hinzufügen</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
 
     <div id="save-bar" class="save-bar hidden">
       <span id="save-status">Es gibt ungespeicherte Änderungen.</span>
@@ -329,6 +351,73 @@
     </div>
   </div>
 
+  <!-- Rein visuell: Seitenleisten-Navigation + Icon-Kacheln aus den Karten aufbauen. -->
+  <script>
+    (function () {
+      function build() {
+        const nav = document.getElementById('feature-nav');
+        const cards = document.querySelectorAll('#config .card');
+        if (!nav || !cards.length) return;
+        nav.innerHTML = '';
+        cards.forEach((card) => {
+          const h2 = card.querySelector('.card-head h2');
+          if (!h2) return;
+          const raw = h2.textContent.trim();
+          const sp = raw.indexOf(' ');
+          const emoji = sp > 0 ? raw.slice(0, sp) : '•';
+          const title = sp > 0 ? raw.slice(sp + 1) : raw;
+          // Icon-Kachel in der Karten-Überschrift
+          h2.innerHTML = '<span class="card-icon">' + emoji + '</span><span class="card-title">' + title + '</span>';
+          const id = 'sec-' + (card.dataset.feature || title);
+          card.id = id;
+          // Nav-Eintrag
+          const a = document.createElement('a');
+          a.href = '#' + id;
+          a.className = 'nav-item';
+          a.dataset.target = id;
+          a.innerHTML = '<span class="nav-emoji">' + emoji + '</span><span class="nav-label">' + title + '</span>';
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const el = document.getElementById(id);
+            if (el) {
+              const top = el.getBoundingClientRect().top + window.scrollY - 20;
+              window.scrollTo({ top, behavior: 'smooth' });
+            }
+          });
+          nav.appendChild(a);
+        });
+
+        // Aktiven Eintrag beim Scrollen hervorheben
+        const items = [...nav.querySelectorAll('.nav-item')];
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((en) => {
+            if (en.isIntersecting) {
+              const id = en.target.id;
+              items.forEach((it) => it.classList.toggle('active', it.dataset.target === id));
+            }
+          });
+        }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+        cards.forEach((c) => io.observe(c));
+      }
+
+      // Sidebar aktiv/inaktiv je nach Sichtbarkeit von #config
+      function watchConfig() {
+        const config = document.getElementById('config');
+        const sidebar = document.querySelector('.sidebar');
+        if (!config || !sidebar) return;
+        const update = () => sidebar.classList.toggle('nav-ready', !config.classList.contains('hidden'));
+        new MutationObserver(update).observe(config, { attributes: true, attributeFilter: ['class'] });
+        update();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => { build(); watchConfig(); });
+      } else {
+        build();
+        watchConfig();
+      }
+    })();
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
