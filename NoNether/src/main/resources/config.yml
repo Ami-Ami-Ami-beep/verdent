@@ -1,0 +1,27 @@
+# NoNether configuration
+#
+# Only *entering* the Nether is blocked. Portals can still be built, lit and
+# stood in - the teleport itself is cancelled. Anything already in the Nether
+# stays there and can leave normally.
+
+# Message shown when a player is stopped. MiniMessage format.
+# Set to "" to send nothing at all.
+message: "<red>Der Nether ist auf diesem Server deaktiviert."
+
+# How the message is delivered: CHAT, ACTION_BAR or NONE.
+message-target: ACTION_BAR
+
+# Seconds between two messages for the same player. Standing in a portal
+# retriggers the teleport every tick, so this keeps chat readable.
+message-cooldown-seconds: 3
+
+# Also stop mobs, items and minecarts from travelling through a portal
+# into the Nether.
+block-entities: true
+
+# Also cancel Nether teleports that do not come from a portal, e.g.
+# /tp, spawn plugins or other plugins moving a player there.
+block-plugin-teleports: true
+
+# Players with the permission nonether.bypass are never blocked.
+respect-bypass-permission: true
