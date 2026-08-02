@@ -1,0 +1,16 @@
+name: NoNether
+version: '${project.version}'
+main: dev.nonether.NoNetherPlugin
+api-version: '1.21'
+description: Blocks entry into the Nether. Existing portals stay where they are.
+authors:
+  - NoNether
+website: https://github.com/ami-ami-ami-beep/verdent
+
+permissions:
+  nonether.bypass:
+    description: Allows a player to enter the Nether anyway.
+    default: false
+  nonether.admin:
+    description: Allows use of /nonether.
+    default: op
