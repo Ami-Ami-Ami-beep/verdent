@@ -1,0 +1,95 @@
+# ---------------------------------------------------------------------------
+#  DJPult
+#
+#  Songs kommen als .nbs-Dateien (Open Note Block Studio) nach
+#  plugins/DJPult/songs/. Nach dem Hinzufügen: /djpult reload
+#
+#  Alle Texte sind im MiniMessage-Format: https://docs.advntr.dev/minimessage/
+# ---------------------------------------------------------------------------
+
+model:
+  # Basis-Item, dessen Modell das Pult anzeigt.
+  material: JUKEBOX
+
+  # Modell aus deinem Resourcepack, z.B. "djpult:dj_pult".
+  # Passt zu assets/djpult/items/dj_pult.json (Minecraft 1.21.4+ / 26.x).
+  # Leer lassen, solange du noch kein Pack hast — dann sieht das Pult aus wie eine Jukebox.
+  item-model: ""
+
+  # Alternative für ältere Resourcepacks. 0 = aus. Wird ignoriert, wenn item-model gesetzt ist.
+  custom-model-data: 0
+
+  # Größe des Modells.
+  scale: 1.0
+
+  # Höhe über dem Block, auf dem das Pult steht. 0.5 setzt ein blockgroßes Modell mittig auf.
+  y-offset: 0.5
+
+  # Wie das Item gerendert wird: NONE, FIXED, GROUND, HEAD, GUI, ...
+  # NONE zeigt ein Blockbench-Modell genau so, wie du es gebaut hast.
+  display-transform: NONE
+
+# Klickbereich des Pults in Blöcken.
+hitbox:
+  width: 1.0
+  height: 1.0
+
+item:
+  name: "<gold><bold>DJ-Pult</bold></gold>"
+  lore:
+    - "<gray>Auf einen Block setzen und anklicken."
+    - "<dark_gray>Schleichen + Rechtsklick baut es wieder ab."
+
+audio:
+  # Standard-Umkreis eines neuen Pults in Blöcken.
+  default-radius: 32
+
+  # Obergrenze, die im GUI eingestellt werden kann.
+  max-radius: 64
+
+  # Standard-Lautstärke eines neuen Pults (0.05 bis 1.0).
+  default-volume: 1.0
+
+  # Noten je nach Stereo-Position leicht links/rechts vom Zuhörer platzieren.
+  stereo: true
+
+  # Note-Blöcke können nur die Tasten 33-57 spielen. true schiebt tiefere/höhere
+  # Noten oktavweise in diesen Bereich, statt sie zu verschlucken.
+  transpose-out-of-range: true
+
+  # Sound für Custom-Instrumente, die ohne passendes Resourcepack nicht aufgelöst werden können.
+  custom-instrument-fallback: "minecraft:block.note_block.harp"
+
+  # Notbremse gegen extrem dichte Songs.
+  max-notes-per-tick: 128
+
+behaviour:
+  # true = nur wer das Pult platziert hat (und Admins) darf es bedienen.
+  restrict-controls-to-owner: false
+
+  # Gibt das Pult-Item beim Abbauen zurück.
+  give-item-back-on-break: true
+
+gui:
+  title: "<gradient:#ff7b00:#ff2d95><bold>DJ-Pult</bold></gradient>"
+
+messages:
+  usage: "<gray>[<gold>DJ<gray>] <white>/djpult <gray><give|list|play|stop|stopall|reload>"
+  no-permission: "<gray>[<gold>DJ<gray>] <red>Dazu fehlt dir die Berechtigung."
+  no-permission-place: "<gray>[<gold>DJ<gray>] <red>Du darfst hier kein DJ-Pult aufstellen."
+  no-permission-break: "<gray>[<gold>DJ<gray>] <red>Dieses Pult gehört jemand anderem."
+  no-permission-control: "<gray>[<gold>DJ<gray>] <red>Du darfst dieses Pult nicht bedienen."
+  no-space: "<gray>[<gold>DJ<gray>] <red>Hier ist kein Platz für das Pult."
+  placed: "<gray>[<gold>DJ<gray>] <green>DJ-Pult aufgestellt. <gray>Rechtsklick öffnet die Steuerung."
+  removed: "<gray>[<gold>DJ<gray>] <yellow>DJ-Pult abgebaut."
+  now-playing: "<gray>[<gold>DJ<gray>] <white>Läuft jetzt: <aqua><song>"
+  stopped: "<gray>[<gold>DJ<gray>] <yellow>Wiedergabe gestoppt."
+  stopped-all: "<gray>[<gold>DJ<gray>] <yellow><count> Pult(e) gestoppt."
+  reloaded: "<gray>[<gold>DJ<gray>] <green>Neu geladen — <count> Titel verfügbar."
+  given: "<gray>[<gold>DJ<gray>] <green>DJ-Pult an <white><player> <green>gegeben."
+  player-not-found: "<gray>[<gold>DJ<gray>] <red>Spieler <white><player> <red>ist nicht online."
+  player-only: "<gray>[<gold>DJ<gray>] <red>Das geht nur im Spiel."
+  song-not-found: "<gray>[<gold>DJ<gray>] <red>Kein Titel namens <white><song> <red>gefunden."
+  no-deck-nearby: "<gray>[<gold>DJ<gray>] <red>In der Nähe steht kein DJ-Pult."
+  song-list-header: "<gray>[<gold>DJ<gray>] <white><count> Titel geladen:"
+  song-list-entry: "<gray>  • <aqua><id> <dark_gray>— <white><title> <gray><author>"
