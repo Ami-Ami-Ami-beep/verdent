@@ -70,15 +70,52 @@ model:
   display-transform: NONE
 ```
 
-Dazu im Resourcepack (Format seit 1.21.4 / 26.x):
+### Modell in Blockbench bauen
+
+Projektformat: **Java Block/Item**. Nicht Bedrock, nicht Modded Entity — das Pult wird als *Item*
+gerendert, und nur dieses Format exportiert das passende Vanilla-JSON.
+
+* Raster **0–16 entspricht einem Block**; erlaubt ist −16 bis 32, also bis zu 3×3×3 Blöcke.
+* Der **Rastermittelpunkt (8, 8, 8) sitzt auf der Entity-Position**. Deshalb `y-offset: 0.5` — damit
+  steht ein blockhohes Modell genau auf dem Block statt halb im Boden.
+* Ein Pult ist meist flacher als ein Block (z.B. 16 × 8 × 12). Dann `hitbox.height` entsprechend
+  kleiner setzen, damit der Klickbereich zum Modell passt.
+* Der **Display**-Tab steuert nur, wie das Item in Hand und Inventar aussieht. Das aufgestellte
+  Pult nutzt bei `display-transform: NONE` das rohe Modell und ignoriert diese Einstellungen.
+* Export über `File → Export → Export Block Model`.
+
+### Pack-Struktur
 
 ```
-assets/djpult/items/dj_pult.json      -> { "model": { "type": "minecraft:model", "model": "djpult:item/dj_pult" } }
-assets/djpult/models/item/dj_pult.json -> dein Blockbench-Modell
-assets/djpult/textures/item/dj_pult.png
+DJPult-Pack/
+├── pack.mcmeta
+└── assets/djpult/
+    ├── items/dj_pult.json           <- Item-Definition, verweist aufs Modell
+    ├── models/item/dj_pult.json     <- der Blockbench-Export
+    └── textures/item/dj_pult.png
 ```
+
+`assets/djpult/items/dj_pult.json`:
+
+```json
+{ "model": { "type": "minecraft:model", "model": "djpult:item/dj_pult" } }
+```
+
+Im Blockbench-Export muss der Texturpfad auf denselben Namespace zeigen:
+`"textures": { "0": "djpult:item/dj_pult", "particle": "djpult:item/dj_pult" }`.
+
+`pack.mcmeta` — seit 1.21.9 steht statt einer einzelnen `pack_format`-Zahl ein Bereich, 26.1 ist
+Format 84:
+
+```json
+{ "pack": { "description": "DJPult", "min_format": 84, "max_format": 99 } }
+```
+
+Die genaue Zahl für deine Server-Version prüfst du am besten mit
+<https://misode.github.io/pack-mcmeta/>.
 
 `item-model` ist genau der Namespace-Pfad der Datei unter `items/`, hier also `djpult:dj_pult`.
+Das Basis-Item (`model.material`) ist dabei egal, das Modell ersetzt das Aussehen komplett.
 Für ältere Packs gibt es alternativ `model.custom-model-data`.
 
 Solange `item-model` leer ist, sieht das Pult wie eine Jukebox aus — alles andere funktioniert
