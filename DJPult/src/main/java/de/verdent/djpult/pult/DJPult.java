@@ -5,10 +5,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -50,22 +51,41 @@ public final class DJPult {
         return interaction.getLocation().add(0, interaction.getInteractionHeight() / 2.0, 0);
     }
 
-    /** The entity rendering the model, or {@code null} when it was removed by other means. */
-    public ItemDisplay display() {
-        String raw = data().get(keys.displayId, PersistentDataType.STRING);
-        if (raw == null) {
-            return null;
+    /**
+     * Every other entity the deck is made of: the displays showing the models and the extra
+     * interactions that make the side parts clickable. Entities that no longer exist are skipped.
+     */
+    public List<Entity> parts() {
+        String raw = data().get(keys.parts, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) {
+            return List.of();
         }
-        try {
-            Entity entity = Bukkit.getEntity(UUID.fromString(raw));
-            return entity instanceof ItemDisplay itemDisplay ? itemDisplay : null;
-        } catch (IllegalArgumentException malformed) {
-            return null;
+        List<Entity> found = new ArrayList<>();
+        for (String id : raw.split(";")) {
+            if (id.isBlank()) {
+                continue;
+            }
+            try {
+                Entity entity = Bukkit.getEntity(UUID.fromString(id));
+                if (entity != null) {
+                    found.add(entity);
+                }
+            } catch (IllegalArgumentException malformed) {
+                // A mangled id simply means one part cannot be found; the rest still works.
+            }
         }
+        return found;
     }
 
-    void setDisplay(ItemDisplay display) {
-        data().set(keys.displayId, PersistentDataType.STRING, display.getUniqueId().toString());
+    void setParts(List<? extends Entity> entities) {
+        StringBuilder ids = new StringBuilder();
+        for (Entity entity : entities) {
+            if (!ids.isEmpty()) {
+                ids.append(';');
+            }
+            ids.append(entity.getUniqueId());
+        }
+        data().set(keys.parts, PersistentDataType.STRING, ids.toString());
     }
 
     public UUID owner() {
@@ -78,10 +98,6 @@ public final class DJPult {
         } catch (IllegalArgumentException malformed) {
             return null;
         }
-    }
-
-    void setOwner(UUID owner) {
-        data().set(keys.owner, PersistentDataType.STRING, owner.toString());
     }
 
     public float volume() {

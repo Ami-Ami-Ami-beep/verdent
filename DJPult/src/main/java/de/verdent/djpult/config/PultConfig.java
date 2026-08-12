@@ -11,6 +11,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,23 @@ public final class PultConfig {
 
     private static final MiniMessage MINI = MiniMessage.miniMessage();
 
+    /**
+     * One model a deck is built from. A deck wider than a block needs several of these, because a
+     * single Blockbench model cannot reach beyond its own block.
+     *
+     * @param itemModel       resource pack model, or {@code null} to show the plain material
+     * @param customModelData legacy alternative to {@code itemModel}, 0 when unused
+     * @param right           blocks to the right of the deck's middle
+     * @param up              blocks above the deck's base
+     * @param forward         blocks in the direction the deck faces
+     * @param scale           model scale of this part
+     * @param yawOffset       extra rotation of this part in degrees
+     */
+    public record Part(NamespacedKey itemModel, int customModelData,
+                       double right, double up, double forward,
+                       float scale, float yawOffset) {
+    }
+
     private final JavaPlugin plugin;
     private final Map<String, String> messages = new HashMap<>();
 
@@ -33,6 +51,7 @@ public final class PultConfig {
     private float scale = 1.0f;
     private double yOffset;
     private ItemDisplay.ItemDisplayTransform displayTransform = ItemDisplay.ItemDisplayTransform.NONE;
+    private List<Part> parts = List.of();
     private String itemName = "<gold><bold>DJ-Pult</bold></gold>";
     private List<String> itemLore = List.of();
 
@@ -87,11 +106,13 @@ public final class PultConfig {
             displayTransform = ItemDisplay.ItemDisplayTransform.NONE;
         }
 
+        parts = readParts(config);
+
         itemName = config.getString("item.name", itemName);
         itemLore = List.copyOf(config.getStringList("item.lore"));
 
         hitboxWidth = (float) Math.max(0.1, config.getDouble("hitbox.width", 1.0));
-        hitboxHeight = (float) Math.max(0.1, config.getDouble("hitbox.height", 1.0));
+        hitboxHeight = (float) Math.max(0.1, config.getDouble("hitbox.height", 0.35));
 
         maxRadius = Math.max(1.0, config.getDouble("audio.max-radius", 64.0));
         defaultRadius = Math.min(maxRadius, Math.max(1.0, config.getDouble("audio.default-radius", 32.0)));
@@ -116,16 +137,62 @@ public final class PultConfig {
         }
     }
 
+    /**
+     * Reads {@code model.parts}. Parts without a model are skipped, so the side pieces can stay
+     * empty until their Blockbench models exist. If that leaves nothing, a single part is built
+     * from the plain {@code model.item-model}.
+     */
+    private List<Part> readParts(FileConfiguration config) {
+        List<Part> found = new ArrayList<>();
+        for (Map<?, ?> entry : config.getMapList("model.parts")) {
+            String rawKey = string(entry, "item-model");
+            NamespacedKey model = rawKey.isBlank() ? null : NamespacedKey.fromString(rawKey);
+            if (!rawKey.isBlank() && model == null) {
+                plugin.getLogger().warning("model.parts contains the invalid item-model '" + rawKey + "'");
+            }
+            int partModelData = Math.max(0, (int) number(entry, "custom-model-data", 0));
+            if (model == null && partModelData == 0) {
+                continue;
+            }
+            found.add(new Part(model, partModelData,
+                    number(entry, "right", 0),
+                    number(entry, "up", 0),
+                    number(entry, "forward", 0),
+                    (float) Math.max(0.05, number(entry, "scale", scale)),
+                    (float) number(entry, "yaw-offset", 0)));
+        }
+        if (found.isEmpty()) {
+            found.add(new Part(itemModel, customModelData, 0, 0, 0, scale, 0));
+        }
+        return List.copyOf(found);
+    }
+
+    private static String string(Map<?, ?> entry, String key) {
+        Object value = entry.get(key);
+        return value == null ? "" : value.toString().trim();
+    }
+
+    private static double number(Map<?, ?> entry, String key, double fallback) {
+        Object value = entry.get(key);
+        return value instanceof Number number ? number.doubleValue() : fallback;
+    }
+
     public Material material() {
         return material;
     }
 
-    public NamespacedKey itemModel() {
-        return itemModel;
+    /** The models a deck is built from, never empty. */
+    public List<Part> parts() {
+        return parts;
     }
 
-    public int customModelData() {
-        return customModelData;
+    /** The middle part; its model is what the deck item shows in hand and in the inventory. */
+    public Part mainPart() {
+        return parts.get(mainPartIndex());
+    }
+
+    public int mainPartIndex() {
+        return parts.size() / 2;
     }
 
     public float scale() {

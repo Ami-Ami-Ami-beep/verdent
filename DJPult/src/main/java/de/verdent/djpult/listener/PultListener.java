@@ -2,6 +2,7 @@ package de.verdent.djpult.listener;
 
 import de.verdent.djpult.DJPultPlugin;
 import de.verdent.djpult.pult.DJPult;
+import de.verdent.djpult.pult.PartLayout;
 import de.verdent.djpult.pult.PultItem;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -59,14 +60,16 @@ public final class PultListener implements Listener {
             return;
         }
         Block target = clicked.getRelative(event.getBlockFace());
-        if (!target.isEmpty() && !target.isPassable()) {
+        Location base = target.getLocation().add(0.5, 0, 0.5);
+        // Snap to quarter turns and spin around so the deck faces the player who placed it. Quarter
+        // turns keep the side parts exactly on block edges.
+        float yaw = PartLayout.snapYaw(player.getLocation().getYaw() + 180f);
+
+        // A deck can be several blocks wide, so every part needs room, not just the block clicked.
+        if (!plugin.pultManager().canPlace(base, yaw)) {
             player.sendMessage(plugin.pultConfig().message("no-space"));
             return;
         }
-
-        Location base = target.getLocation().add(0.5, 0, 0.5);
-        // Snap to eighth turns and spin around so the deck faces the player who placed it.
-        float yaw = Math.round(player.getLocation().getYaw() / 45f) * 45f + 180f;
 
         plugin.pultManager().place(player, base, yaw);
         if (player.getGameMode() != GameMode.CREATIVE) {

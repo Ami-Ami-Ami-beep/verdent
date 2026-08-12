@@ -11,7 +11,9 @@ import org.bukkit.plugin.Plugin;
 public final class PultKeys {
 
     public final NamespacedKey marker;
-    public final NamespacedKey displayId;
+    /** On the main interaction: the ids of every other entity making up the deck. */
+    public final NamespacedKey parts;
+    /** On every satellite entity: the id of the main interaction holding the deck's state. */
     public final NamespacedKey interactionId;
     public final NamespacedKey owner;
     public final NamespacedKey volume;
@@ -23,7 +25,7 @@ public final class PultKeys {
 
     public PultKeys(Plugin plugin) {
         marker = new NamespacedKey(plugin, "deck");
-        displayId = new NamespacedKey(plugin, "display_id");
+        parts = new NamespacedKey(plugin, "part_ids");
         interactionId = new NamespacedKey(plugin, "interaction_id");
         owner = new NamespacedKey(plugin, "owner");
         volume = new NamespacedKey(plugin, "volume");

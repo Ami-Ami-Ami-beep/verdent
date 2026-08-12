@@ -15,9 +15,12 @@ public final class PultItem {
     private PultItem() {
     }
 
-    /** The item handed to players. Carries a marker so only this item places a deck. */
+    /**
+     * The item handed to players. Carries a marker so only this item places a deck, and shows the
+     * middle part's model — that is the piece players recognise the deck by.
+     */
     public static ItemStack create(PultConfig config, PultKeys keys) {
-        ItemStack item = model(config);
+        ItemStack item = model(config, config.mainPart());
         item.editMeta(meta -> {
             meta.displayName(PultConfig.mini(config.itemName())
                     .decoration(TextDecoration.ITALIC, false));
@@ -33,15 +36,15 @@ public final class PultItem {
         return item;
     }
 
-    /** The plain item used inside the {@code ItemDisplay}; same look, no marker or name. */
-    public static ItemStack model(PultConfig config) {
+    /** The plain item used inside the {@code ItemDisplay} of one part; no marker or name. */
+    public static ItemStack model(PultConfig config, PultConfig.Part part) {
         ItemStack item = new ItemStack(config.material());
         item.editMeta(meta -> {
-            if (config.itemModel() != null) {
-                meta.setItemModel(config.itemModel());
+            if (part.itemModel() != null) {
+                meta.setItemModel(part.itemModel());
             }
-            if (config.customModelData() > 0) {
-                meta.setCustomModelData(config.customModelData());
+            if (part.customModelData() > 0) {
+                meta.setCustomModelData(part.customModelData());
             }
         });
         return item;

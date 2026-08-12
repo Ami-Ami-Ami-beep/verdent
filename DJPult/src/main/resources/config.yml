@@ -8,18 +8,11 @@
 # ---------------------------------------------------------------------------
 
 model:
-  # Basis-Item, dessen Modell das Pult anzeigt.
+  # Basis-Item, dessen Modell das Pult anzeigt. Das Aussehen kommt komplett aus item-model,
+  # das Material selbst ist also egal.
   material: JUKEBOX
 
-  # Modell aus deinem Resourcepack, z.B. "djpult:dj_pult".
-  # Passt zu assets/djpult/items/dj_pult.json (Minecraft 1.21.4+ / 26.x).
-  # Leer lassen, solange du noch kein Pack hast — dann sieht das Pult aus wie eine Jukebox.
-  item-model: ""
-
-  # Alternative für ältere Resourcepacks. 0 = aus. Wird ignoriert, wenn item-model gesetzt ist.
-  custom-model-data: 0
-
-  # Größe des Modells.
+  # Größe der Modelle.
   scale: 1.0
 
   # Höhe über dem Block, auf dem das Pult steht. 0.5 setzt ein blockgroßes Modell mittig auf.
@@ -29,10 +22,40 @@ model:
   # NONE zeigt ein Blockbench-Modell genau so, wie du es gebaut hast.
   display-transform: NONE
 
-# Klickbereich des Pults in Blöcken.
+  # ---------------------------------------------------------------------
+  #  Die Teile, aus denen ein Pult besteht.
+  #
+  #  Ein Blockbench-Modell kommt nicht über seinen eigenen Block hinaus.
+  #  Ein breiteres Pult besteht deshalb aus mehreren Modellen nebeneinander,
+  #  die beim Aufstellen zusammen gesetzt werden. Jedes Teil ist anklickbar
+  #  und öffnet dieselbe Steuerung; Abbauen entfernt das ganze Pult.
+  #
+  #  right / up / forward: Versatz zur Mitte in Blöcken, aus Sicht des Pults.
+  #  Das mittlere Teil der Liste ist das Hauptteil — sein Modell zeigt auch
+  #  das Item in der Hand.
+  #
+  #  Ein Teil ohne item-model wird übersprungen. Du kannst die Seitenteile
+  #  also leer lassen, bis ihre Modelle fertig sind — dann steht erstmal nur
+  #  die Mitte da. Bleibt kein einziges Teil übrig, erscheint ein schlichtes
+  #  Basis-Item, damit auch ganz ohne Resourcepack etwas zu sehen ist.
+  # ---------------------------------------------------------------------
+  parts:
+    - item-model: ""            # z.B. "djpult:dj_pult_links"
+      right: -1.0
+    - item-model: ""            # z.B. "djpult:dj_pult_mitte"  <- Hauptteil
+      right: 0.0
+    - item-model: ""            # z.B. "djpult:dj_pult_rechts"
+      right: 1.0
+
+  # Fallback, wenn oben kein einziges Teil ein Modell hat.
+  item-model: ""
+  custom-model-data: 0
+
+# Klickbereich je Teil in Blöcken. Muss zur Höhe deines Modells passen:
+# ein flaches Pult, das im Blockbench nur bis y=4 geht, ist 4/16 = 0.25 hoch.
 hitbox:
   width: 1.0
-  height: 1.0
+  height: 0.35
 
 item:
   name: "<gold><bold>DJ-Pult</bold></gold>"

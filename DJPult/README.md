@@ -57,20 +57,42 @@ Alias: `/dj`.
 Abbauen darf grundsätzlich nur, wer das Pult aufgestellt hat — oder ein Admin. Mit
 `behaviour.restrict-controls-to-owner: true` gilt das auch fürs Bedienen.
 
-## Eigenes Modell einhängen
+## Eigene Modelle einhängen
 
-Das Plugin bringt **kein** Resourcepack mit, es verweist nur darauf. In `config.yml`:
+Das Plugin bringt **kein** Resourcepack mit, es verweist nur darauf.
+
+Ein Blockbench-Modell kommt nicht über seinen eigenen Block hinaus. Ein Pult, das breiter als ein
+Block sein soll, besteht deshalb aus **mehreren Modellen nebeneinander**, die beim Aufstellen
+zusammen gesetzt werden. In `config.yml`:
 
 ```yaml
 model:
   material: JUKEBOX
-  item-model: "djpult:dj_pult"
   scale: 1.0
   y-offset: 0.5
   display-transform: NONE
+  parts:
+    - item-model: "djpult:dj_pult_links"
+      right: -1.0
+    - item-model: "djpult:dj_pult_mitte"    # Hauptteil
+      right: 0.0
+    - item-model: "djpult:dj_pult_rechts"
+      right: 1.0
 ```
 
-### Modell in Blockbench bauen
+* `right` / `up` / `forward` sind der Versatz zur Mitte **in Blöcken, aus Sicht des Pults** — beim
+  Aufstellen dreht sich die ganze Reihe mit.
+* Das **mittlere Teil der Liste** ist das Hauptteil. Sein Modell zeigt auch das Item in der Hand,
+  und seine Position ist der Bezugspunkt für Musik und Reichweite.
+* **Jedes** Teil ist anklickbar und öffnet dieselbe Steuerung. Abbauen entfernt das ganze Pult.
+* Ein Teil ohne `item-model` wird übersprungen — du kannst die Seitenteile also leer lassen, bis
+  ihre Modelle fertig sind, und bekommst vorerst nur die Mitte.
+* Aufgestellt wird in **90°-Schritten**, damit die Teile exakt auf Blockgrenzen sitzen.
+
+Beim Platzieren wird geprüft, ob **alle** benötigten Blöcke frei sind — sonst kommt „Hier ist kein
+Platz für das Pult".
+
+### Modelle in Blockbench bauen
 
 Projektformat: **Java Block/Item**. Nicht Bedrock, nicht Modded Entity — das Pult wird als *Item*
 gerendert, und nur dieses Format exportiert das passende Vanilla-JSON.
@@ -84,25 +106,45 @@ gerendert, und nur dieses Format exportiert das passende Vanilla-JSON.
   Pult nutzt bei `display-transform: NONE` das rohe Modell und ignoriert diese Einstellungen.
 * Export über `File → Export → Export Block Model`.
 
+**Jedes Teil ist ein eigenes Projekt** mit eigener Datei und eigenem Eintrag unter `items/`. Damit
+die Teile bündig aneinander kacheln, alle im vollen Raster 0–16 bauen und die Kanten, die sich
+berühren, bündig abschließen lassen.
+
+Vor dem Export kurz prüfen:
+
+* Kein Element doppelt an derselben Stelle — zwei identische Würfel erzeugen Z-Fighting
+  (flackernde Textur).
+* Der Texturpfad hat einen Namespace: `"0": "dj_pult_mitte"` sucht unter
+  `assets/minecraft/textures/`, richtig ist `djpult:item/dj_pult_mitte`.
+
 ### Pack-Struktur
 
 ```
 DJPult-Pack/
 ├── pack.mcmeta
 └── assets/djpult/
-    ├── items/dj_pult.json           <- Item-Definition, verweist aufs Modell
-    ├── models/item/dj_pult.json     <- der Blockbench-Export
-    └── textures/item/dj_pult.png
+    ├── items/
+    │   ├── dj_pult_links.json        <- Item-Definitionen, verweisen aufs Modell
+    │   ├── dj_pult_mitte.json
+    │   └── dj_pult_rechts.json
+    ├── models/item/
+    │   ├── dj_pult_links.json        <- die Blockbench-Exporte
+    │   ├── dj_pult_mitte.json
+    │   └── dj_pult_rechts.json
+    └── textures/item/
+        ├── dj_pult_links.png
+        ├── dj_pult_mitte.png
+        └── dj_pult_rechts.png
 ```
 
-`assets/djpult/items/dj_pult.json`:
+`assets/djpult/items/dj_pult_mitte.json`:
 
 ```json
-{ "model": { "type": "minecraft:model", "model": "djpult:item/dj_pult" } }
+{ "model": { "type": "minecraft:model", "model": "djpult:item/dj_pult_mitte" } }
 ```
 
 Im Blockbench-Export muss der Texturpfad auf denselben Namespace zeigen:
-`"textures": { "0": "djpult:item/dj_pult", "particle": "djpult:item/dj_pult" }`.
+`"textures": { "0": "djpult:item/dj_pult_mitte", "particle": "djpult:item/dj_pult_mitte" }`.
 
 `pack.mcmeta` — seit 1.21.9 steht statt einer einzelnen `pack_format`-Zahl ein Bereich, 26.1 ist
 Format 84:
@@ -114,17 +156,18 @@ Format 84:
 Die genaue Zahl für deine Server-Version prüfst du am besten mit
 <https://misode.github.io/pack-mcmeta/>.
 
-`item-model` ist genau der Namespace-Pfad der Datei unter `items/`, hier also `djpult:dj_pult`.
-Das Basis-Item (`model.material`) ist dabei egal, das Modell ersetzt das Aussehen komplett.
-Für ältere Packs gibt es alternativ `model.custom-model-data`.
+`item-model` ist genau der Namespace-Pfad der Datei unter `items/`, hier also
+`djpult:dj_pult_mitte`. Das Basis-Item (`model.material`) ist dabei egal, das Modell ersetzt das
+Aussehen komplett. Für ältere Packs gibt es alternativ `custom-model-data` je Teil.
 
-Solange `item-model` leer ist, sieht das Pult wie eine Jukebox aus — alles andere funktioniert
-trotzdem.
+Solange kein Teil ein Modell hat, steht dort eine Jukebox — alles andere funktioniert trotzdem.
 
-Das Pult besteht aus zwei Entities: einem `ItemDisplay`, das dein Modell zeigt, und einer
-unsichtbaren `Interaction` mit der Klick-Hitbox (`hitbox.width` / `hitbox.height`). Der komplette
-Zustand liegt im Persistent Data Container der `Interaction`, ein Pult übersteht damit
-Chunk-Unloads und Serverneustarts.
+Pro Teil entstehen zwei Entities: ein `ItemDisplay` mit dem Modell und eine unsichtbare
+`Interaction` als Klickbereich (`hitbox.width` / `hitbox.height`, muss zur Höhe deines Modells
+passen). Die `Interaction` des Hauptteils ist das Pult: Sie hält alle Einstellungen und die Ids
+der übrigen Entities in ihrem Persistent Data Container, weshalb ein Pult Chunk-Unloads und
+Serverneustarts übersteht. Die übrigen Entities zeigen per Rückverweis auf sie — deshalb öffnet
+jedes Teil dieselbe Steuerung.
 
 ## Wie die Musik ausgespielt wird
 
@@ -163,7 +206,10 @@ Tests (`./gradlew test`) decken den NBS-Parser und die Pitch-/Lautstärke-Mathem
 
 1. Paper 26.x starten, Jar installieren, ein paar `.nbs` nach `plugins/DJPult/songs/`.
 2. `/djpult reload`, dann `/djpult give`.
-3. Pult aufstellen, Rechtsklick, Titel anklicken.
-4. Mit einem zweiten Account prüfen: Musik ist zu hören, wird beim Weglaufen leiser und verstummt
-   jenseits des eingestellten Umkreises.
-5. Server neu starten — das Pult steht noch und lässt sich weiter bedienen.
+3. Pult in alle vier Richtungen aufstellen — die Teile sitzen bündig und ohne Lücke nebeneinander.
+4. Jedes Teil per Rechtsklick anklicken: überall öffnet dieselbe Steuerung.
+5. Titel starten. Mit einem zweiten Account prüfen: Musik ist zu hören, wird beim Weglaufen leiser
+   und verstummt jenseits des eingestellten Umkreises.
+6. Schleichen + Rechtsklick auf ein **Randteil** — das komplette Pult verschwindet und das Item
+   kommt zurück.
+7. Server neu starten — das Pult steht vollständig und lässt sich weiter bedienen.
