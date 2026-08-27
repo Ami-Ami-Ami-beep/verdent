@@ -54,11 +54,18 @@ model:
   item-model: ""
   custom-model-data: 0
 
-# Klickbereich je Teil in Blöcken. Muss zur Höhe deines Modells passen:
-# ein flaches Pult, das im Blockbench nur bis y=4 geht, ist 4/16 = 0.25 hoch.
+# Klickbereich je Teil in Blöcken. Muss zur Höhe deines Modells passen.
+#
+# 1.0 passt zum Auslieferungszustand ohne Resourcepack, wo das Pult als volle
+# Jukebox dargestellt wird. Mit dem mitgelieferten Pack ist das Pult flach
+# (im Blockbench nur bis y=4, also 4/16 = 0.25 hoch) — dann 0.35 eintragen,
+# sonst ragt der Klickbereich sichtbar über das Modell hinaus.
+#
+# Lieber zu hoch als zu niedrig: Ein zu kleiner Bereich lässt sich am Modell
+# vorbei anklicken, ein zu großer trifft nur etwas Luft darüber mit.
 hitbox:
   width: 1.0
-  height: 0.35
+  height: 1.0
 
 item:
   name: "<gold><bold>DJ-Pult</bold></gold>"

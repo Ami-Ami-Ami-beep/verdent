@@ -112,7 +112,9 @@ public final class PultConfig {
         itemLore = List.copyOf(config.getStringList("item.lore"));
 
         hitboxWidth = (float) Math.max(0.1, config.getDouble("hitbox.width", 1.0));
-        hitboxHeight = (float) Math.max(0.1, config.getDouble("hitbox.height", 0.35));
+        // A full block, matching the plain jukebox shown when no resource pack
+        // supplies a model. Too small a box lets clicks slip past the model.
+        hitboxHeight = (float) Math.max(0.1, config.getDouble("hitbox.height", 1.0));
 
         maxRadius = Math.max(1.0, config.getDouble("audio.max-radius", 64.0));
         defaultRadius = Math.min(maxRadius, Math.max(1.0, config.getDouble("audio.default-radius", 32.0)));

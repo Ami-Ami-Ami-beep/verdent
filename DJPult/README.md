@@ -103,7 +103,7 @@ gerendert, und nur dieses Format exportiert das passende Vanilla-JSON.
 * Der **Rastermittelpunkt (8, 8, 8) sitzt auf der Entity-Position**. Deshalb `y-offset: 0.5` — damit
   steht ein blockhohes Modell genau auf dem Block statt halb im Boden.
 * Ein Pult ist meist flacher als ein Block (z.B. 16 × 8 × 12). Dann `hitbox.height` entsprechend
-  kleiner setzen, damit der Klickbereich zum Modell passt.
+  kleiner setzen (mit dem mitgelieferten Pack: `0.35`), damit der Klickbereich zum Modell passt.
 * Der **Display**-Tab steuert nur, wie das Item in Hand und Inventar aussieht. Das aufgestellte
   Pult nutzt bei `display-transform: NONE` das rohe Modell und ignoriert diese Einstellungen.
 * Export über `File → Export → Export Block Model`.
@@ -161,7 +161,27 @@ Die genaue Zahl für deine Server-Version prüfst du am besten mit
 `djpult:dj_pult_mitte`. Das Basis-Item (`model.material`) ist dabei egal, das Modell ersetzt das
 Aussehen komplett. Für ältere Packs gibt es alternativ `custom-model-data` je Teil.
 
-Solange kein Teil ein Modell hat, steht dort eine Jukebox — alles andere funktioniert trotzdem.
+### Ganz ohne Resourcepack
+
+Das Plugin funktioniert vollständig ohne Pack — es sieht nur anders aus.
+
+**Die Musik braucht nie ein Pack.** `.nbs`-Songs bestehen aus Note-Block-Klängen, die jeder Client
+schon hat. Alle Spieler hören mit, ohne irgendetwas zu installieren.
+
+Ist kein `item-model` gesetzt, steht statt des Pults **eine Jukebox** da, einen Block groß. GUI,
+Wiedergabe, Umkreis, Lautstärke, Befehle und die Persistenz über Neustarts sind davon unberührt.
+`model.material` bestimmt, welches Item dabei zu sehen ist.
+
+Weil ein Resourcepack pro Spieler geladen wird, gilt das auch gemischt: Wer es hat, sieht das
+DJ-Pult, wer nicht, sieht die Jukebox — und **beide hören dieselbe Musik**. Es muss also nicht
+jeder auf dem Server das Pack installieren.
+
+Ein Punkt zum Umstellen: `hitbox.height` steht auf `1.0`, passend zur vollen Jukebox. Mit dem
+mitgelieferten Pack ist das Pult flach, dann `0.35` eintragen.
+
+Songs mit eigenen Sample-Instrumenten sind die eine Ausnahme: Deren Klänge liegen im Pack des
+Song-Autors. Fehlt es, greift `audio.custom-instrument-fallback` und die Noten werden als Harfe
+gespielt.
 
 Pro Teil entstehen zwei Entities: ein `ItemDisplay` mit dem Modell und eine unsichtbare
 `Interaction` als Klickbereich (`hitbox.width` / `hitbox.height`, muss zur Höhe deines Modells
