@@ -95,9 +95,20 @@ jobs:
           Modell angepasst werden.
           NOTES
 
-          gh release create "$GITHUB_REF_NAME" \
-            --title "DJPult $GITHUB_REF_NAME" \
-            --prerelease \
-            --notes-file release-notes.md \
-            DJPult/build/libs/*.jar \
-            DJPult-Resourcepack.zip
+          # The tag can arrive two ways: pushed with git, or created by the
+          # release form on github.com. In the second case the release already
+          # exists and only needs its assets, so creating it would fail.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME exists, attaching assets to it."
+            gh release upload "$GITHUB_REF_NAME" --clobber \
+              DJPult/build/libs/*.jar \
+              DJPult-Resourcepack.zip
+          else
+            echo "Creating release $GITHUB_REF_NAME."
+            gh release create "$GITHUB_REF_NAME" \
+              --title "DJPult $GITHUB_REF_NAME" \
+              --prerelease \
+              --notes-file release-notes.md \
+              DJPult/build/libs/*.jar \
+              DJPult-Resourcepack.zip
+          fi
