@@ -40,3 +40,64 @@ jobs:
           name: test-report
           path: DJPult/build/reports/tests/test
           if-no-files-found: ignore
+
+  # Artifacts can only be downloaded by signed-in users. A release asset can be
+  # downloaded by anyone, so tagging is what produces a link that just works.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build plugin
+        working-directory: DJPult
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: Package resource pack
+        working-directory: DJPult/resourcepack
+        run: zip -r "$GITHUB_WORKSPACE/DJPult-Resourcepack.zip" .
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Heredoc rather than an inline --notes: continuation lines would keep
+          # their indentation, and four leading spaces turn Markdown into code.
+          cat > release-notes.md <<'NOTES'
+          Plugin und Resourcepack für Paper 26.x.
+
+          ## Installieren
+
+          1. `DJPult-*.jar` nach `plugins/` legen und den Server starten.
+          2. `DJPult-Resourcepack.zip` nach `.minecraft/resourcepacks/` legen und im Spiel aktivieren.
+          3. In `plugins/DJPult/config.yml` unter `model.parts` die drei Modelle eintragen:
+             `djpult:dj_pult_links`, `djpult:dj_pult_mitte`, `djpult:dj_pult_rechts`.
+          4. `.nbs`-Songs nach `plugins/DJPult/songs/`, dann `/djpult reload`.
+          5. `/djpult give`, Pult aufstellen, Rechtsklick.
+
+          ## Vorabversion
+
+          Der Build ist grün und alle Tests laufen durch, aber das Plugin war noch auf keinem
+          Server im Einsatz. `model.y-offset` und `hitbox.height` müssen eventuell an das
+          Modell angepasst werden.
+          NOTES
+
+          gh release create "$GITHUB_REF_NAME" \
+            --title "DJPult $GITHUB_REF_NAME" \
+            --prerelease \
+            --notes-file release-notes.md \
+            DJPult/build/libs/*.jar \
+            DJPult-Resourcepack.zip
