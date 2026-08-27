@@ -73,14 +73,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build plugin
-        working-directory: DJPult
-        run: ./gradlew build --no-daemon --stacktrace
-
-      - name: Package resource pack
-        working-directory: DJPult/resourcepack
-        run: zip -r "$GITHUB_WORKSPACE/DJPult-Resourcepack.zip" .
-
+      # Resolved before the build, because the build stamps this version into
+      # the jar name and into plugin.yml.
       - name: Resolve tag
         id: tag
         run: |
@@ -89,7 +83,16 @@ jobs:
             TAG="$GITHUB_REF_NAME"
           fi
           echo "name=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Releasing as $TAG"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG as version ${TAG#v}"
+
+      - name: Build plugin
+        working-directory: DJPult
+        run: ./gradlew build --no-daemon --stacktrace -PdjpultVersion="${{ steps.tag.outputs.version }}"
+
+      - name: Package resource pack
+        working-directory: DJPult/resourcepack
+        run: zip -r "$GITHUB_WORKSPACE/DJPult-Resourcepack.zip" .
 
       - name: Create the tag if it does not exist yet
         env:

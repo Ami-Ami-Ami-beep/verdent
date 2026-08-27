@@ -3,7 +3,11 @@ plugins {
 }
 
 group = "de.verdent"
-version = "1.0.0"
+
+// The release job passes -PdjpultVersion=<tag without the v>, so the jar name
+// and the version in plugin.yml always match the tag they were published under.
+// The default applies to local builds.
+version = (findProperty("djpultVersion") as String?) ?: "0.1.1"
 
 repositories {
     mavenCentral()

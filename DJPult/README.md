@@ -13,7 +13,7 @@ weiter sie weg stehen.
 
 ## Installation
 
-1. `DJPult-1.0.0.jar` nach `plugins/` legen und den Server starten.
+1. `DJPult-<version>.jar` nach `plugins/` legen und den Server starten.
 2. `.nbs`-Dateien nach `plugins/DJPult/songs/` kopieren.
 3. `/djpult reload` — die Titel stehen sofort im GUI.
 
@@ -218,7 +218,7 @@ cd DJPult
 ./gradlew build
 ```
 
-Ergebnis: `build/libs/DJPult-1.0.0.jar`. Gebraucht wird JDK 25 (Paper 26.x). Der Workflow
+Ergebnis: `build/libs/DJPult-0.1.1.jar` (bei einem Release-Build trägt die Datei die Tag-Version). Gebraucht wird JDK 25 (Paper 26.x). Der Workflow
 `.github/workflows/build.yml` baut dieselbe Jar bei jedem Push und hängt sie als Artifact an.
 
 Tests (`./gradlew test`) decken den NBS-Parser und die Pitch-/Lautstärke-Mathematik ab.
