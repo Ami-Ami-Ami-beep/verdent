@@ -1,7 +1,9 @@
 name: DJPult
 version: '${version}'
 main: de.verdent.djpult.DJPultPlugin
-api-version: '26'
+# Bukkit parses this as major.minor or major.minor.patch and rejects a bare
+# number, so '26' fails to load. Declaring 26.1 keeps it valid on 26.1 and above.
+api-version: '26.1'
 description: DJ-Pult mit eigenem Modell, GUI und Musik, die alle in der Nähe synchron hören.
 website: https://github.com/ami-ami-ami-beep/verdent
 
