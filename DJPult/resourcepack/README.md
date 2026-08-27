@@ -1,30 +1,33 @@
 # DJPult — Resourcepack
 
-Die Modelle für das dreiteilige DJ-Pult. **Eine Datei fehlt noch: die Textur.**
+Das komplette Pack für das dreiteilige DJ-Pult: Mixer in der Mitte, Plattenspieler links und
+rechts. Modelle **und** Texturen sind fertig, du kannst es direkt einpacken und laden.
+
+![Das Pult von oben](preview.png)
 
 ```
 resourcepack/
 ├── pack.mcmeta
+├── build_assets.py                    erzeugt Modelle + Texturen neu
 └── assets/djpult/
-    ├── items/                         Item-Definitionen (fertig)
+    ├── items/                         Item-Definitionen
     │   ├── dj_pult_links.json
     │   ├── dj_pult_mitte.json
     │   └── dj_pult_rechts.json
-    ├── models/item/                   die Modelle (fertig)
+    ├── models/item/
     │   ├── dj_pult_links.json         Plattenspieler links
     │   ├── dj_pult_mitte.json         dein Mixer, korrigiert
     │   └── dj_pult_rechts.json        Plattenspieler rechts, gespiegelt
     └── textures/item/
-        └── dj_pult_mitte.png          ← FEHLT, die musst du hier ablegen
+        ├── dj_pult_mitte.png          Textur des Mixers
+        └── dj_pult_seite.png          Textur beider Plattenspieler
 ```
 
-## Was du noch tun musst
+## Einbauen
 
-1. **`dj_pult_mitte.png` nach `assets/djpult/textures/item/` legen** — deine 32×32-Textur aus
-   Blockbench. Alle drei Modelle benutzen sie gemeinsam.
-2. Den Ordner `resourcepack/` als ZIP packen (die `pack.mcmeta` muss **auf oberster Ebene** im ZIP
-   liegen, nicht in einem Unterordner) und in `.minecraft/resourcepacks/` ablegen.
-3. In `plugins/DJPult/config.yml` eintragen:
+1. Den Ordner `resourcepack/` als ZIP packen — `pack.mcmeta` muss **auf oberster Ebene** im ZIP
+   liegen, nicht in einem Unterordner — und nach `.minecraft/resourcepacks/` legen.
+2. In `plugins/DJPult/config.yml` eintragen:
 
 ```yaml
 model:
@@ -37,37 +40,56 @@ model:
       right: 1.0
 ```
 
-4. `/djpult reload`
+3. `/djpult reload`
 
-## Zu den Modellen
+**Hast du schon eine eigene `dj_pult_mitte.png`?** Dann überschreib die hier einfach damit — dein
+Mixer-Modell benutzt genau die UV-Bereiche, für die deine Textur gemalt ist.
+
+## Die Modelle
 
 **Mitte** ist dein Mixer, mit zwei Korrekturen:
 
-* Das doppelte Element auf `[5,2,11] → [6,3,12]` ist raus (zwei identische Würfel an derselben
-  Stelle flackern gegeneinander). 20 → 19 Elemente, dein Knopfraster ist vollständig geblieben.
-* Der Texturpfad heißt jetzt `djpult:item/dj_pult_mitte` statt `dj_pult_mitte` — ohne Namespace
+* Das doppelte Element auf `[5,2,11] → [6,3,12]` ist raus — zwei identische Würfel an derselben
+  Stelle flackern gegeneinander. 20 → 19 Elemente, dein Knopfraster ist vollständig geblieben.
+* Der Texturpfad heißt jetzt `djpult:item/dj_pult_mitte` statt `dj_pult_mitte`; ohne Namespace
   hätte Minecraft unter `assets/minecraft/textures/` gesucht.
 
 **Links und rechts** sind Plattenspieler: Grundplatte (identisch zur Mitte, damit die Reihe bündig
-ist), zweistufiger Plattenteller, Spindel, Tonarm mit Lager und Tonabnehmer, Pitch-Fader,
-Start/Stop und zwei kleine Tasten. Rechts ist die exakte Spiegelung von links — der Tonarm sitzt
-dort auf der anderen Seite.
-
-Die UVs greifen auf dieselben Bereiche deiner Textur zu wie dein Mixer (Deckfläche oben links,
-Seitenstreifen rechts oben, Knopf-Regionen in der Mitte). Die Teile passen dadurch farblich
-zusammen, haben aber noch keine eigenen Details — Plattenteller und Tonarm holst du dir am besten
-in Blockbench mit ein paar Pinselstrichen heraus.
+ist), zweistufiger Plattenteller, Spindel, Tonarm mit Lager und Tonabnehmer, Pitch-Fader mit
+Regler, Start/Stop und zwei kleine Tasten. Rechts ist die exakte Spiegelung von links, der Tonarm
+sitzt dort auf der anderen Seite — wie bei einem echten Battle-Aufbau.
 
 Alle drei Modelle sind darauf geprüft, dass keine zwei gleich ausgerichteten Flächen aufeinander
-liegen — also kein Flackern.
+liegen, es flackert also nichts.
 
-## Anpassen
+## Die Texturen
 
-Die Dateien lassen sich direkt in Blockbench öffnen (`File → Open Model`). Beim Speichern schreibt
-Blockbench sie im selben Format zurück.
+Beide sind 32×32, dunkles Gehäuse mit grünem Akzent und ein paar bernsteinfarbenen Reglern.
 
-Wenn du den Teilen später eigene Texturen geben willst, in der jeweiligen Modelldatei einfach den
-`textures`-Block ändern, z.B. auf `djpult:item/dj_pult_links`.
+`dj_pult_seite.png` ist in Bereiche aufgeteilt: Deckfläche, Schallplatte (Rillen nach Radius,
+farbiges Label, Spindelloch), Gehäuseseiten, Tellerkanten, Tonarm und je eine Kachel für Lager,
+Tonabnehmer, Spindel, Fader-Schlitz, Pitch-Regler und die Tasten. Der obere Tellerschritt greift
+den inneren Ausschnitt derselben Schallplatte ab, damit die Rillen über die Stufe hinweg
+weiterlaufen statt neu anzufangen.
+
+`dj_pult_mitte.png` ist aus deinem Modell heraus gemalt: Das Skript liest jede Fläche und färbt
+genau deren UV-Rechteck ein — Deckfläche, Gehäuseseiten, Fader-Schlitze und Knopfkappen im
+Wechsel grün und bernstein. Deshalb sitzt jede Farbe garantiert dort, wo dein Modell sie abgreift.
+
+## Ändern
+
+Die Modelle lassen sich direkt in Blockbench öffnen (`File → Open Model`) und speichern im selben
+Format zurück.
+
+Die Texturen kannst du natürlich einfach übermalen. Wenn du stattdessen die Farben ändern willst,
+stehen sie oben in `build_assets.py` als Palette; danach:
+
+```bash
+python3 build_assets.py            # ohne Argument: nur Seitenteile + Textur
+```
+
+Das Skript prüft dabei auch, dass sich keine zwei Atlas-Bereiche überlappen und kein Modell
+flackernde Flächen hat. Es braucht nur die Python-Standardbibliothek.
 
 `pack.mcmeta` steht auf Format 84 (Minecraft 26.1). Falls dein Server eine andere Version fährt,
 die Zahl mit <https://misode.github.io/pack-mcmeta/> gegenprüfen.

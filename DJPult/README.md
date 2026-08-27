@@ -59,9 +59,9 @@ Abbauen darf grundsätzlich nur, wer das Pult aufgestellt hat — oder ein Admin
 
 ## Modelle einhängen
 
-Im Ordner [`resourcepack/`](resourcepack/) liegt ein fertiges Pack mit drei Modellen — Mixer in der
-Mitte, Plattenspieler links und rechts. Es fehlt nur die Textur `dj_pult_mitte.png`, Details dazu
-in der [Pack-README](resourcepack/README.md).
+Im Ordner [`resourcepack/`](resourcepack/) liegt ein fertiges Pack: Mixer in der Mitte,
+Plattenspieler links und rechts, mit Texturen. Einpacken, laden, die drei Modell-Ids in die Config
+eintragen — Details in der [Pack-README](resourcepack/README.md).
 
 Ein Blockbench-Modell kommt nicht über seinen eigenen Block hinaus. Ein Pult, das breiter als ein
 Block sein soll, besteht deshalb aus **mehreren Modellen nebeneinander**, die beim Aufstellen
@@ -134,7 +134,8 @@ resourcepack/
     │   ├── dj_pult_mitte.json
     │   └── dj_pult_rechts.json
     └── textures/item/
-        └── dj_pult_mitte.png         <- alle drei Modelle teilen sich diese Textur
+        ├── dj_pult_mitte.png         <- Mixer
+        └── dj_pult_seite.png         <- beide Plattenspieler
 ```
 
 `assets/djpult/items/dj_pult_mitte.json`:
