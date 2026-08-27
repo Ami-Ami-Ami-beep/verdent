@@ -19,6 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public final class DJPultPlugin extends JavaPlugin {
 
@@ -68,6 +69,13 @@ public final class DJPultPlugin extends JavaPlugin {
         }
         if (playback != null) {
             playback.shutdown();
+        }
+    }
+
+    /** Logs only when debug is on; the message is built lazily so it costs nothing otherwise. */
+    public void debug(Supplier<String> message) {
+        if (config != null && config.debug()) {
+            getLogger().info("[debug] " + message.get());
         }
     }
 

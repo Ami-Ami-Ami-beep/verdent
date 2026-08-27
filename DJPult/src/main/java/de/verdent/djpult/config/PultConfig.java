@@ -66,6 +66,7 @@ public final class PultConfig {
     private String customInstrumentFallback = "minecraft:block.note_block.harp";
     private int maxNotesPerTick = 128;
 
+    private boolean debug;
     private boolean restrictControlsToOwner;
     private boolean giveItemBackOnBreak = true;
 
@@ -125,6 +126,7 @@ public final class PultConfig {
                 "minecraft:block.note_block.harp");
         maxNotesPerTick = Math.max(1, config.getInt("audio.max-notes-per-tick", 128));
 
+        debug = config.getBoolean("debug", false);
         restrictControlsToOwner = config.getBoolean("behaviour.restrict-controls-to-owner", false);
         giveItemBackOnBreak = config.getBoolean("behaviour.give-item-back-on-break", true);
 
@@ -251,6 +253,11 @@ public final class PultConfig {
 
     public int maxNotesPerTick() {
         return maxNotesPerTick;
+    }
+
+    /** Logs every deck interaction, so a click that never arrives can be told from one that does. */
+    public boolean debug() {
+        return debug;
     }
 
     public boolean restrictControlsToOwner() {

@@ -96,6 +96,11 @@ audio:
   # Notbremse gegen extrem dichte Songs.
   max-notes-per-tick: 128
 
+# Schreibt jede Interaktion mit einem Pult ins Server-Log. Hilft, wenn ein
+# Rechtsklick nichts tut: Steht nichts im Log, erreicht der Klick das Plugin
+# gar nicht erst — steht etwas da, liegt es an dem, was danach passiert.
+debug: false
+
 behaviour:
   # true = nur wer das Pult platziert hat (und Admins) darf es bedienen.
   restrict-controls-to-owner: false
@@ -107,7 +112,7 @@ gui:
   title: "<gradient:#ff7b00:#ff2d95><bold>DJ-Pult</bold></gradient>"
 
 messages:
-  usage: "<gray>[<gold>DJ<gray>] <white>/djpult <gray><give|list|play|stop|stopall|reload>"
+  usage: "<gray>[<gold>DJ<gray>] <white>/djpult <gray><give|list|play|stop|check|stopall|reload>"
   no-permission: "<gray>[<gold>DJ<gray>] <red>Dazu fehlt dir die Berechtigung."
   no-permission-place: "<gray>[<gold>DJ<gray>] <red>Du darfst hier kein DJ-Pult aufstellen."
   no-permission-break: "<gray>[<gold>DJ<gray>] <red>Dieses Pult gehört jemand anderem."

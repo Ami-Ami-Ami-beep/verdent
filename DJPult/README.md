@@ -4,7 +4,7 @@ Ein Paper-Plugin, das ein platzierbares **DJ-Pult** ins Spiel bringt. Rechtsklic
 aus dem du Songs startest — und **alle Spieler im Umkreis hören die Musik synchron mit**, leiser je
 weiter sie weg stehen.
 
-* Server: **Paper 26.x** (`api-version: '26'`, Java 25)
+* Server: **Paper 26.x** (`api-version: '26.1'`, Java 25)
 * Musik: **.nbs**-Songs aus [Open Note Block Studio](https://noteblock.studio) — kein zweites
   Plugin, keine Sound-Dateien im Resourcepack nötig
 * Modell: dein eigenes Resourcepack-Modell, über die Config eingehängt
@@ -43,6 +43,7 @@ für jeden von vorn.
 | `/djpult list` | `djpult.use` | Geladene Titel anzeigen |
 | `/djpult play <titel>` | `djpult.use` | Titel auf dem nächsten Pult starten |
 | `/djpult stop` | `djpult.use` | Nächstes Pult stoppen |
+| `/djpult check` | `djpult.use` | Zeigt die Pult-Entities in der Nähe und ihre Klickbox |
 | `/djpult stopall` | `djpult.admin` | Alle Pulte stoppen |
 | `/djpult reload` | `djpult.admin` | Config und Songs neu laden |
 

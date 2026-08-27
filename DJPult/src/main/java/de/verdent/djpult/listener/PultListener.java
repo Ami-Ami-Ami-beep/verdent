@@ -4,6 +4,7 @@ import de.verdent.djpult.DJPultPlugin;
 import de.verdent.djpult.pult.DJPult;
 import de.verdent.djpult.pult.PartLayout;
 import de.verdent.djpult.pult.PultItem;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -78,7 +79,7 @@ public final class PultListener implements Listener {
         player.sendMessage(plugin.pultConfig().message("placed"));
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     public void onRightClick(PlayerInteractEntityEvent event) {
         handleInteract(event.getPlayer(), event.getRightClicked(), event.getHand());
     }
@@ -87,12 +88,18 @@ public final class PultListener implements Listener {
      * Interaction entities usually arrive as the "at" variant, which has its own handler list and
      * would otherwise be missed.
      */
-    @EventHandler(ignoreCancelled = true)
+    // Deliberately without ignoreCancelled: another plugin cancelling the interact
+    // would otherwise silently swallow every click on the deck.
+    @EventHandler
     public void onRightClickAt(PlayerInteractAtEntityEvent event) {
         handleInteract(event.getPlayer(), event.getRightClicked(), event.getHand());
     }
 
     private void handleInteract(Player player, Entity entity, EquipmentSlot hand) {
+        plugin.debug(() -> "interact from " + player.getName() + " on " + entity.getType()
+                + " hand=" + hand + " sneaking=" + player.isSneaking()
+                + " deckEntity=" + plugin.pultManager().isDeckEntity(entity));
+
         if (hand != EquipmentSlot.HAND) {
             return;
         }
@@ -110,7 +117,9 @@ public final class PultListener implements Listener {
             if (player.isSneaking()) {
                 tryRemove(player, pult);
             } else {
-                plugin.openGui(player, pult);
+                // Next tick: an inventory opened while the server is still handling the
+                // interact packet can be dropped again by the client.
+                Bukkit.getScheduler().runTask(plugin, () -> plugin.openGui(player, pult));
             }
         });
     }

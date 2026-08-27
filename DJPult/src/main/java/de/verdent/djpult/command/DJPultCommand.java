@@ -2,13 +2,17 @@ package de.verdent.djpult.command;
 
 import de.verdent.djpult.DJPultPlugin;
 import de.verdent.djpult.audio.SongPlayer;
+import de.verdent.djpult.config.PultConfig;
 import de.verdent.djpult.nbs.Song;
 import de.verdent.djpult.pult.DJPult;
 import de.verdent.djpult.pult.PultItem;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.Location;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -42,6 +46,7 @@ public final class DJPultCommand implements TabExecutor {
             case "list" -> list(sender);
             case "play" -> play(sender, args);
             case "stop" -> stop(sender);
+            case "check" -> check(sender);
             case "stopall" -> stopAll(sender);
             case "reload" -> reload(sender);
             default -> sendUsage(sender);
@@ -148,6 +153,47 @@ public final class DJPultCommand implements TabExecutor {
         player.sendMessage(plugin.pultConfig().message("stopped"));
     }
 
+    /**
+     * Reports the deck entities around the player. A deck is only clickable through its
+     * Interaction entity, so when a right click does nothing this shows whether that entity
+     * is there at all and how large its box is.
+     */
+    private void check(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.pultConfig().message("player-only"));
+            return;
+        }
+        if (!player.hasPermission("djpult.use")) {
+            player.sendMessage(plugin.pultConfig().message("no-permission"));
+            return;
+        }
+
+        Location at = player.getLocation();
+        List<Entity> found = new ArrayList<>();
+        for (Entity entity : at.getWorld().getNearbyEntities(at, REACH, REACH, REACH)) {
+            if (plugin.pultManager().isDeckEntity(entity)) {
+                found.add(entity);
+            }
+        }
+        player.sendMessage(PultConfig.mini(
+                "<gray>[<gold>DJ<gray>] <white><count> Pult-Entities im Umkreis von "
+                        + (int) REACH + " Blöcken:", "count", String.valueOf(found.size())));
+        for (Entity entity : found) {
+            String size = entity instanceof Interaction interaction
+                    ? "Klickbox " + interaction.getInteractionWidth()
+                            + " x " + interaction.getInteractionHeight()
+                    : "nur Anzeige, nicht klickbar";
+            player.sendMessage(PultConfig.mini("<gray>  \u2022 <aqua><type> <gray><dist>m \u2014 <white><size>",
+                    "type", entity.getType().name(),
+                    "dist", String.format(Locale.ROOT, "%.1f", entity.getLocation().distance(at)),
+                    "size", size));
+        }
+        if (found.isEmpty()) {
+            player.sendMessage(PultConfig.mini(
+                    "<red>Kein Pult in der Nähe. Steht eins da, gehört es nicht diesem Plugin."));
+        }
+    }
+
     private void stopAll(CommandSender sender) {
         if (!sender.hasPermission("djpult.admin")) {
             sender.sendMessage(plugin.pultConfig().message("no-permission"));
@@ -174,7 +220,7 @@ public final class DJPultCommand implements TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
-            List<String> options = new ArrayList<>(List.of("list", "play", "stop"));
+            List<String> options = new ArrayList<>(List.of("list", "play", "stop", "check"));
             if (sender.hasPermission("djpult.admin")) {
                 options.addAll(List.of("give", "stopall", "reload"));
             }

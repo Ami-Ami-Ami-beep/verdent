@@ -10,7 +10,7 @@ website: https://github.com/ami-ami-ami-beep/verdent
 commands:
   djpult:
     description: Verwaltet DJ-Pulte und Songs.
-    usage: /djpult <give|list|play|stop|stopall|reload>
+    usage: /djpult <give|list|play|stop|check|stopall|reload>
     aliases: [dj]
 
 permissions:
