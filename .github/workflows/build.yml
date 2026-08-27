@@ -1,0 +1,153 @@
+name: Build DJPult
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag für ein Release, z.B. v0.1.0. Leer lassen, um nur zu bauen."
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build plugin
+        working-directory: DJPult
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: DJPult-plugin
+          path: DJPult/build/libs/*.jar
+          if-no-files-found: error
+
+      - name: Upload test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: DJPult/build/reports/tests/test
+          if-no-files-found: ignore
+
+  # Artifacts can only be downloaded by signed-in users. A release asset can be
+  # downloaded by anyone, so tagging is what produces a link that just works.
+  release:
+    # Two ways in: a pushed v* tag, or a manual run that names one. The second
+    # exists because not every caller is allowed to push tag refs.
+    # inputs is null outside workflow_dispatch and null != '' is true, so the
+    # event has to be checked as well or this would fire on every push.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v')
+      || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # Resolved before the build, because the build stamps this version into
+      # the jar name and into plugin.yml.
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="$GITHUB_REF_NAME"
+          fi
+          echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG as version ${TAG#v}"
+
+      - name: Build plugin
+        working-directory: DJPult
+        run: ./gradlew build --no-daemon --stacktrace -PdjpultVersion="${{ steps.tag.outputs.version }}"
+
+      - name: Package resource pack
+        working-directory: DJPult/resourcepack
+        run: zip -r "$GITHUB_WORKSPACE/DJPult-Resourcepack.zip" .
+
+      - name: Create the tag if it does not exist yet
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          git fetch --tags --quiet
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "DJPult $TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          # Heredoc rather than an inline --notes: continuation lines would keep
+          # their indentation, and four leading spaces turn Markdown into code.
+          cat > release-notes.md <<'NOTES'
+          Plugin und Resourcepack für Paper 26.x.
+
+          ## Installieren
+
+          1. `DJPult-*.jar` nach `plugins/` legen und den Server starten.
+          2. `DJPult-Resourcepack.zip` nach `.minecraft/resourcepacks/` legen und im Spiel aktivieren.
+          3. In `plugins/DJPult/config.yml` unter `model.parts` die drei Modelle eintragen:
+             `djpult:dj_pult_links`, `djpult:dj_pult_mitte`, `djpult:dj_pult_rechts`.
+          4. `.nbs`-Songs nach `plugins/DJPult/songs/`, dann `/djpult reload`.
+          5. `/djpult give`, Pult aufstellen, Rechtsklick.
+
+          ## Vorabversion
+
+          Der Build ist grün und alle Tests laufen durch, aber das Plugin war noch auf keinem
+          Server im Einsatz. `model.y-offset` und `hitbox.height` müssen eventuell an das
+          Modell angepasst werden.
+          NOTES
+
+          # The release may already exist, for instance when it was created by
+          # the release form on github.com, which makes the tag along with it.
+          # Creating it again would fail, so only the assets go up in that case.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists, attaching assets to it."
+            gh release upload "$TAG" --clobber \
+              DJPult/build/libs/*.jar \
+              DJPult-Resourcepack.zip
+          else
+            echo "Creating release $TAG."
+            gh release create "$TAG" \
+              --title "DJPult $TAG" \
+              --prerelease \
+              --notes-file release-notes.md \
+              DJPult/build/libs/*.jar \
+              DJPult-Resourcepack.zip
+          fi

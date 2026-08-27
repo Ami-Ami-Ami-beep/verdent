@@ -1,0 +1,25 @@
+name: DJPult
+version: '${version}'
+main: de.verdent.djpult.DJPultPlugin
+# Bukkit parses this as major.minor or major.minor.patch and rejects a bare
+# number, so '26' fails to load. Declaring 26.1 keeps it valid on 26.1 and above.
+api-version: '26.1'
+description: DJ-Pult mit eigenem Modell, GUI und Musik, die alle in der Nähe synchron hören.
+website: https://github.com/ami-ami-ami-beep/verdent
+
+commands:
+  djpult:
+    description: Verwaltet DJ-Pulte und Songs.
+    usage: /djpult <give|list|play|stop|check|stopall|reload>
+    aliases: [dj]
+
+permissions:
+  djpult.use:
+    description: Darf DJ-Pulte bedienen und Musik starten.
+    default: true
+  djpult.place:
+    description: Darf DJ-Pulte platzieren.
+    default: true
+  djpult.admin:
+    description: Darf Pult-Items vergeben, fremde Pulte abbauen und das Plugin neu laden.
+    default: op
