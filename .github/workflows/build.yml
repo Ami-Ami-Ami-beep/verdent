@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag für ein Release, z.B. v0.1.0. Leer lassen, um nur zu bauen."
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -44,7 +49,13 @@ jobs:
   # Artifacts can only be downloaded by signed-in users. A release asset can be
   # downloaded by anyone, so tagging is what produces a link that just works.
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Two ways in: a pushed v* tag, or a manual run that names one. The second
+    # exists because not every caller is allowed to push tag refs.
+    # inputs is null outside workflow_dispatch and null != '' is true, so the
+    # event has to be checked as well or this would fire on every push.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v')
+      || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -70,9 +81,34 @@ jobs:
         working-directory: DJPult/resourcepack
         run: zip -r "$GITHUB_WORKSPACE/DJPult-Resourcepack.zip" .
 
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="$GITHUB_REF_NAME"
+          fi
+          echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Releasing as $TAG"
+
+      - name: Create the tag if it does not exist yet
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          git fetch --tags --quiet
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "DJPult $TAG"
+            git push origin "$TAG"
+          fi
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.name }}
         run: |
           # Heredoc rather than an inline --notes: continuation lines would keep
           # their indentation, and four leading spaces turn Markdown into code.
@@ -95,18 +131,18 @@ jobs:
           Modell angepasst werden.
           NOTES
 
-          # The tag can arrive two ways: pushed with git, or created by the
-          # release form on github.com. In the second case the release already
-          # exists and only needs its assets, so creating it would fail.
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "Release $GITHUB_REF_NAME exists, attaching assets to it."
-            gh release upload "$GITHUB_REF_NAME" --clobber \
+          # The release may already exist, for instance when it was created by
+          # the release form on github.com, which makes the tag along with it.
+          # Creating it again would fail, so only the assets go up in that case.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists, attaching assets to it."
+            gh release upload "$TAG" --clobber \
               DJPult/build/libs/*.jar \
               DJPult-Resourcepack.zip
           else
-            echo "Creating release $GITHUB_REF_NAME."
-            gh release create "$GITHUB_REF_NAME" \
-              --title "DJPult $GITHUB_REF_NAME" \
+            echo "Creating release $TAG."
+            gh release create "$TAG" \
+              --title "DJPult $TAG" \
               --prerelease \
               --notes-file release-notes.md \
               DJPult/build/libs/*.jar \
