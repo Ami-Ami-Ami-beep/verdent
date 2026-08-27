@@ -182,6 +182,9 @@ public final class DJPultCommand implements TabExecutor {
             String size = entity instanceof Interaction interaction
                     ? "Klickbox " + interaction.getInteractionWidth()
                             + " x " + interaction.getInteractionHeight()
+                            // A solid block in the same spot is targeted by the client
+                            // instead of the entity, so no entity event is ever sent.
+                            + ", Block dort: " + entity.getLocation().getBlock().getType()
                     : "nur Anzeige, nicht klickbar";
             player.sendMessage(PultConfig.mini("<gray>  \u2022 <aqua><type> <gray><dist>m \u2014 <white><size>",
                     "type", entity.getType().name(),
