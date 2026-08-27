@@ -1,0 +1,202 @@
+{
+	"credit": "DJPult - linker Plattenspieler",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "djpult:item/dj_pult_mitte",
+		"particle": "djpult:item/dj_pult_mitte"
+	},
+	"elements": [
+		{
+			"name": "Grundplatte",
+			"from": [0, 0, 0],
+			"to": [16, 2, 16],
+			"faces": {
+				"north": {"uv": [8, 0, 16, 1], "texture": "#0"},
+				"east": {"uv": [8, 1, 16, 2], "texture": "#0"},
+				"south": {"uv": [8, 2, 16, 3], "texture": "#0"},
+				"west": {"uv": [8, 3, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 8, 0, 0], "texture": "#0"},
+				"down": {"uv": [8, 8, 0, 16], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Teller unten",
+			"from": [3, 2, 2],
+			"to": [13, 2.5, 12],
+			"faces": {
+				"north": {"uv": [8, 0, 16, 0.5], "texture": "#0"},
+				"east": {"uv": [8, 1, 16, 1.5], "texture": "#0"},
+				"south": {"uv": [8, 2, 16, 2.5], "texture": "#0"},
+				"west": {"uv": [8, 3, 16, 3.5], "texture": "#0"},
+				"up": {"uv": [1, 1, 7, 7], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Teller oben",
+			"from": [4, 2.5, 3],
+			"to": [12, 3, 11],
+			"faces": {
+				"north": {"uv": [8, 0, 16, 0.5], "texture": "#0"},
+				"east": {"uv": [8, 1, 16, 1.5], "texture": "#0"},
+				"south": {"uv": [8, 2, 16, 2.5], "texture": "#0"},
+				"west": {"uv": [8, 3, 16, 3.5], "texture": "#0"},
+				"up": {"uv": [1.5, 1.5, 6.5, 6.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Spindel",
+			"from": [7.5, 3, 6.5],
+			"to": [8.5, 3.5, 7.5],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Tonarm-Lager",
+			"from": [13.5, 2, 4],
+			"to": [15.5, 3.8, 7],
+			"faces": {
+				"north": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"east": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"south": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"west": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"up": {"uv": [8, 4, 9, 5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Tonarm",
+			"from": [8, 3.2, 5],
+			"to": [14.2, 3.6, 5.8],
+			"faces": {
+				"north": {"uv": [10, 5, 12.5, 5.5], "texture": "#0"},
+				"east": {"uv": [10, 5, 10.5, 5.5], "texture": "#0"},
+				"south": {"uv": [10, 5, 12.5, 5.5], "texture": "#0"},
+				"west": {"uv": [10, 5, 10.5, 5.5], "texture": "#0"},
+				"up": {"uv": [10, 5, 12.5, 5.5], "texture": "#0"},
+				"down": {"uv": [10, 5, 12.5, 5.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Tonabnehmer",
+			"from": [7.2, 3.05, 4.8],
+			"to": [8.4, 3.55, 6],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"down": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Pitch-Schlitz",
+			"from": [10, 2, 13],
+			"to": [15, 2.3, 14.5],
+			"faces": {
+				"north": {"uv": [8, 4, 8.5, 4.5], "texture": "#0"},
+				"east": {"uv": [8, 4, 8.5, 4.5], "texture": "#0"},
+				"south": {"uv": [8, 4, 8.5, 4.5], "texture": "#0"},
+				"west": {"uv": [8, 4, 8.5, 4.5], "texture": "#0"},
+				"up": {"uv": [8, 4, 9, 5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Pitch-Regler",
+			"from": [12, 2.3, 13.2],
+			"to": [13, 2.9, 14.3],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Start-Stop",
+			"from": [2, 2, 13],
+			"to": [4.5, 2.5, 15],
+			"faces": {
+				"north": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"east": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"south": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"west": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"up": {"uv": [8, 4, 9, 5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Taste A",
+			"from": [5.5, 2, 13.5],
+			"to": [6.7, 2.4, 14.7],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Taste B",
+			"from": [7.2, 2, 13.5],
+			"to": [8.4, 2.4, 14.7],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Power",
+			"from": [0.8, 2, 9],
+			"to": [2, 2.4, 10.2],
+			"faces": {
+				"north": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"east": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"south": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"west": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"},
+				"up": {"uv": [11.5, 11, 12, 11.5], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, 3.5, 0],
+			"scale": [0.5, 0.5, 0.5]
+		},
+		"thirdperson_lefthand": {
+			"translation": [0, 3.5, 0],
+			"scale": [0.5, 0.5, 0.5]
+		},
+		"firstperson_righthand": {
+			"translation": [0, 6.5, 0]
+		},
+		"firstperson_lefthand": {
+			"translation": [0, 6.5, 0]
+		},
+		"ground": {
+			"translation": [0, 4.5, 0]
+		},
+		"gui": {
+			"rotation": [-90, 0, -180],
+			"scale": [0.8, 0.8, 0.8]
+		},
+		"head": {
+			"translation": [0, 13.75, 0]
+		}
+	},
+	"groups": [
+		{
+			"name": "Links",
+			"origin": [8, 8, 8],
+			"children": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+		}
+	]
+}

@@ -57,9 +57,11 @@ Alias: `/dj`.
 Abbauen darf grundsätzlich nur, wer das Pult aufgestellt hat — oder ein Admin. Mit
 `behaviour.restrict-controls-to-owner: true` gilt das auch fürs Bedienen.
 
-## Eigene Modelle einhängen
+## Modelle einhängen
 
-Das Plugin bringt **kein** Resourcepack mit, es verweist nur darauf.
+Im Ordner [`resourcepack/`](resourcepack/) liegt ein fertiges Pack mit drei Modellen — Mixer in der
+Mitte, Plattenspieler links und rechts. Es fehlt nur die Textur `dj_pult_mitte.png`, Details dazu
+in der [Pack-README](resourcepack/README.md).
 
 Ein Blockbench-Modell kommt nicht über seinen eigenen Block hinaus. Ein Pult, das breiter als ein
 Block sein soll, besteht deshalb aus **mehreren Modellen nebeneinander**, die beim Aufstellen
@@ -120,7 +122,7 @@ Vor dem Export kurz prüfen:
 ### Pack-Struktur
 
 ```
-DJPult-Pack/
+resourcepack/
 ├── pack.mcmeta
 └── assets/djpult/
     ├── items/
@@ -128,13 +130,11 @@ DJPult-Pack/
     │   ├── dj_pult_mitte.json
     │   └── dj_pult_rechts.json
     ├── models/item/
-    │   ├── dj_pult_links.json        <- die Blockbench-Exporte
+    │   ├── dj_pult_links.json        <- die Blockbench-Modelle
     │   ├── dj_pult_mitte.json
     │   └── dj_pult_rechts.json
     └── textures/item/
-        ├── dj_pult_links.png
-        ├── dj_pult_mitte.png
-        └── dj_pult_rechts.png
+        └── dj_pult_mitte.png         <- alle drei Modelle teilen sich diese Textur
 ```
 
 `assets/djpult/items/dj_pult_mitte.json`:

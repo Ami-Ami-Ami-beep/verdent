@@ -39,6 +39,9 @@ model:
   #  die Mitte da. Bleibt kein einziges Teil übrig, erscheint ein schlichtes
   #  Basis-Item, damit auch ganz ohne Resourcepack etwas zu sehen ist.
   # ---------------------------------------------------------------------
+  #  Zum mitgelieferten Resourcepack (Ordner "resourcepack" im Plugin-Repo)
+  #  gehören diese drei Werte — eintragen, sobald das Pack geladen ist:
+  #      "djpult:dj_pult_links" / "djpult:dj_pult_mitte" / "djpult:dj_pult_rechts"
   parts:
     - item-model: ""            # z.B. "djpult:dj_pult_links"
       right: -1.0

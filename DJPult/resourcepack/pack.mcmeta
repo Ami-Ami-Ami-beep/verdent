@@ -1,0 +1,8 @@
+{
+	"pack": {
+		"description": "DJPult — Modelle für das DJ-Pult",
+		"pack_format": 84,
+		"min_format": 84,
+		"max_format": 99
+	}
+}
