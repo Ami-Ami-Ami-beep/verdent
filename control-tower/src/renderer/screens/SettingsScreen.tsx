@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import type { ProviderView, VerifyReport } from '@shared/types/ipc'
 import type { ProviderSpec } from '@shared/types/provider'
 import type { Settings } from '@shared/types/settings'
+import { providerDisplay } from '../components/bits'
 
 export function SettingsScreen({
   settings,
@@ -34,7 +35,7 @@ export function SettingsScreen({
   }
 
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 1120 }}>
       <div className="card">
         <h2>Provider chain</h2>
         <p className="small muted">
@@ -47,9 +48,8 @@ export function SettingsScreen({
             <div className="row" key={id} style={{ padding: '5px 0' }}>
               <span className="muted mono">{i + 1}.</span>
               <strong>{view?.spec.label ?? id}</strong>
-              {view && <span className={`dot ${view.state.status}`} />}
-              <span className="muted small">{view?.state.status ?? 'unknown'}</span>
-              {view && !view.spec.verified && <span className="pill queued">unverified</span>}
+              {view && <span className={`dot ${providerDisplay(view).dot}`} />}
+              <span className="muted small">{view ? providerDisplay(view).text : 'not configured'}</span>
               <span className="spacer" />
               <button className="ghost" onClick={() => move(id, -1)} disabled={i === 0}>
                 ↑
@@ -199,11 +199,11 @@ function ProviderEditor({
     <div className="card">
       <div className="row">
         <h2 style={{ margin: 0 }}>{spec.label}</h2>
-        <span className={`dot ${view.state.status}`} />
+        <span className={`dot ${providerDisplay(view).dot}`} />
         {spec.verified ? (
-          <span className="small muted">verified {spec.verified.version}</span>
+          <span className="small muted">verified · {spec.verified.version}</span>
         ) : (
-          <span className="pill queued">unverified</span>
+          <span className="pill queued">not verified</span>
         )}
         <span className="spacer" />
         <label className="checkbox small" style={{ marginBottom: 0 }}>

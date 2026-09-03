@@ -45,6 +45,7 @@ describe('budget clock', () => {
 
   it('formats durations for humans', () => {
     expect(humanDuration(7 * 3_600_000 + 27 * 60_000)).toBe('7h 27m')
+    expect(humanDuration(10 * 3_600_000)).toBe('10h')
     expect(humanDuration(90_000)).toBe('1m')
   })
 })

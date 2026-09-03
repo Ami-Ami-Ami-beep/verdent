@@ -82,6 +82,7 @@ label > span.lbl { display: block; margin-bottom: 5px; color: var(--muted); font
 .dot.cooling { background: var(--cool); }
 .dot.probation { background: var(--warn); }
 .dot.disabled { background: var(--bad); }
+.dot.off { background: #4a5060; }
 
 .content { flex: 1; overflow: auto; padding: 16px; }
 

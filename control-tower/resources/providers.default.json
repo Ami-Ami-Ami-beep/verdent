@@ -7,27 +7,50 @@
       "enabled": true,
       "command": "claude",
       "argvFresh": [
-        "-p", "{{PROMPT}}",
-        "--output-format", "stream-json",
+        "-p",
+        "{{PROMPT}}",
+        "--output-format",
+        "stream-json",
         "--verbose",
-        "--add-dir", "{{WORKDIR}}",
-        "--session-id", "{{SESSION_ID}}"
+        "--add-dir",
+        "{{WORKDIR}}",
+        "--session-id",
+        "{{SESSION_ID}}"
       ],
       "argvResume": [
-        "-p", "{{PROMPT}}",
-        "--output-format", "stream-json",
+        "-p",
+        "{{PROMPT}}",
+        "--output-format",
+        "stream-json",
         "--verbose",
-        "--resume", "{{SESSION_ID}}"
+        "--resume",
+        "{{SESSION_ID}}"
       ],
       "allowedToolsArgs": [
-        "--permission-mode", "acceptEdits",
+        "--permission-mode",
+        "acceptEdits",
         "--allowedTools",
-        "Read", "Write", "Edit", "Glob", "Grep",
-        "Bash(npm *)", "Bash(npx *)", "Bash(node *)",
-        "Bash(python *)", "Bash(python3 *)", "Bash(pip *)", "Bash(pytest *)",
-        "Bash(git *)", "Bash(ls *)", "Bash(cat *)", "Bash(mkdir *)"
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Bash(npm *)",
+        "Bash(npx *)",
+        "Bash(node *)",
+        "Bash(python *)",
+        "Bash(python3 *)",
+        "Bash(pip *)",
+        "Bash(pytest *)",
+        "Bash(git *)",
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(mkdir *)"
       ],
-      "fullAutoArgs": ["--permission-mode", "acceptEdits"],
+      "fullAutoArgs": [
+        "--permission-mode",
+        "acceptEdits"
+      ],
       "promptDelivery": "argv",
       "supportsResume": true,
       "supportsStreamJson": true,
@@ -70,7 +93,7 @@
     },
     {
       "id": "gemini",
-      "label": "Gemini CLI (unverified)",
+      "label": "Gemini CLI",
       "enabled": false,
       "command": "gemini",
       "argvFresh": [],
@@ -88,15 +111,28 @@
           "resource_exhausted",
           "\\b429\\b"
         ],
-        "authPatterns": ["unauthenticated", "invalid api key", "\\b401\\b", "permission_denied"],
-        "transientPatterns": ["\\b(500|503)\\b", "unavailable", "deadline_exceeded", "ECONNRESET"],
-        "resetTimePatterns": ["retry (?:in|after) ([^\\n\\.]+)", "resets? (?:at|in) ([^\\n\\.]+)"],
+        "authPatterns": [
+          "unauthenticated",
+          "invalid api key",
+          "\\b401\\b",
+          "permission_denied"
+        ],
+        "transientPatterns": [
+          "\\b(500|503)\\b",
+          "unavailable",
+          "deadline_exceeded",
+          "ECONNRESET"
+        ],
+        "resetTimePatterns": [
+          "retry (?:in|after) ([^\\n\\.]+)",
+          "resets? (?:at|in) ([^\\n\\.]+)"
+        ],
         "quotaMaxRuntimeMs": 120000
       }
     },
     {
       "id": "codex",
-      "label": "Codex CLI (unverified)",
+      "label": "Codex CLI",
       "enabled": false,
       "command": "codex",
       "argvFresh": [],
@@ -115,9 +151,22 @@
           "usage limit",
           "\\b429\\b"
         ],
-        "authPatterns": ["incorrect api key", "invalid_api_key", "\\b401\\b", "not logged in"],
-        "transientPatterns": ["\\b(500|502|503)\\b", "overloaded", "ECONNRESET", "ETIMEDOUT"],
-        "resetTimePatterns": ["try again in ([^\\n\\.]+)", "resets? (?:at|in) ([^\\n\\.]+)"],
+        "authPatterns": [
+          "incorrect api key",
+          "invalid_api_key",
+          "\\b401\\b",
+          "not logged in"
+        ],
+        "transientPatterns": [
+          "\\b(500|502|503)\\b",
+          "overloaded",
+          "ECONNRESET",
+          "ETIMEDOUT"
+        ],
+        "resetTimePatterns": [
+          "try again in ([^\\n\\.]+)",
+          "resets? (?:at|in) ([^\\n\\.]+)"
+        ],
         "quotaMaxRuntimeMs": 120000
       }
     }

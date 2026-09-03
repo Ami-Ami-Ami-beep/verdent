@@ -1,15 +1,9 @@
 import React from 'react'
 import type { ProviderView } from '@shared/types/ipc'
 import type { Run } from '@shared/types/run'
+import { humanDuration } from '@shared/budget'
 
-export function humanDuration(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000))
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m`
-  return `${total}s`
-}
+export { humanDuration }
 
 export function elapsedOf(run: Run | undefined): number {
   if (!run) return 0
@@ -42,20 +36,42 @@ export function BudgetGauge({ run, budgetMs }: { run?: Run; budgetMs: number }):
   )
 }
 
-export function ProviderChip({ view }: { view: ProviderView }): JSX.Element {
+/**
+ * One place decides how a provider's readiness is shown, because "can this run?"
+ * is not the same question as "is it cooling?" — a provider that is switched off
+ * or was never verified cannot take work either, and must never wear the green
+ * dot that says it can.
+ */
+export function providerDisplay(view: ProviderView): { dot: string; text: string } {
   const { spec, state } = view
-  const detail =
-    state.status === 'cooling' && state.cooldownUntil
-      ? ` · back ${new Date(state.cooldownUntil).toLocaleTimeString()}`
-      : state.status === 'disabled'
-        ? ' · needs login'
-        : ''
+
+  if (!spec.enabled) return { dot: 'off', text: 'off' }
+  if (!spec.verified) return { dot: 'off', text: 'not verified' }
+
+  switch (state.status) {
+    case 'cooling':
+      return {
+        dot: 'cooling',
+        text: state.cooldownUntil
+          ? `out of quota until ${new Date(state.cooldownUntil).toLocaleTimeString()}`
+          : 'out of quota'
+      }
+    case 'disabled':
+      return { dot: 'disabled', text: 'needs login' }
+    case 'probation':
+      return { dot: 'probation', text: 'retrying' }
+    default:
+      return { dot: 'available', text: 'ready' }
+  }
+}
+
+export function ProviderChip({ view }: { view: ProviderView }): JSX.Element {
+  const { dot, text } = providerDisplay(view)
   return (
-    <span className="chip" title={state.lastFailure?.excerpt ?? spec.label}>
-      <i className={`dot ${state.status}`} />
-      {spec.label}
-      {!spec.verified && <span className="muted"> · unverified</span>}
-      <span className="muted">{detail}</span>
+    <span className="chip" title={view.state.lastFailure?.excerpt ?? view.spec.label}>
+      <i className={`dot ${dot}`} />
+      {view.spec.label}
+      <span className="muted"> · {text}</span>
     </span>
   )
 }

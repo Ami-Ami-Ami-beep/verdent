@@ -35,7 +35,7 @@ export function humanDuration(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000))
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`
   if (m > 0) return `${m}m`
   return `${total}s`
 }
