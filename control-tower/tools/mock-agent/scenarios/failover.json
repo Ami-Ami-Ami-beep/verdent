@@ -1,0 +1,10 @@
+{
+  "iterations": [
+    { "behave": "work", "durationMs": 20, "label": "planning" },
+    { "behave": "work", "durationMs": 20, "label": "first feature" },
+    { "behave": "quota", "stderr": "Error: usage limit reached. Resets at 2099-01-01T00:00:00Z", "exit": 1 },
+    { "behave": "work", "durationMs": 20, "label": "second feature" },
+    { "behave": "prose_trap" },
+    { "behave": "complete" }
+  ]
+}

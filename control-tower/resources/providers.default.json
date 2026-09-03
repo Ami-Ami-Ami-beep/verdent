@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "providers": [
+    {
+      "id": "claude",
+      "label": "Claude Code",
+      "enabled": true,
+      "command": "claude",
+      "argvFresh": [
+        "-p", "{{PROMPT}}",
+        "--output-format", "stream-json",
+        "--verbose",
+        "--add-dir", "{{WORKDIR}}",
+        "--session-id", "{{SESSION_ID}}"
+      ],
+      "argvResume": [
+        "-p", "{{PROMPT}}",
+        "--output-format", "stream-json",
+        "--verbose",
+        "--resume", "{{SESSION_ID}}"
+      ],
+      "allowedToolsArgs": [
+        "--permission-mode", "acceptEdits",
+        "--allowedTools",
+        "Read", "Write", "Edit", "Glob", "Grep",
+        "Bash(npm *)", "Bash(npx *)", "Bash(node *)",
+        "Bash(python *)", "Bash(python3 *)", "Bash(pip *)", "Bash(pytest *)",
+        "Bash(git *)", "Bash(ls *)", "Bash(cat *)", "Bash(mkdir *)"
+      ],
+      "fullAutoArgs": ["--permission-mode", "acceptEdits"],
+      "promptDelivery": "argv",
+      "supportsResume": true,
+      "supportsStreamJson": true,
+      "maxConcurrent": 1,
+      "costHint": "subscription",
+      "verified": null,
+      "detection": {
+        "quotaExitCodes": [],
+        "quotaPatterns": [
+          "usage limit reached",
+          "rate.?limit(ed)?",
+          "quota (exceeded|exhausted)",
+          "out of (credits?|quota)",
+          "\\b429\\b",
+          "too many requests"
+        ],
+        "authPatterns": [
+          "invalid api key",
+          "authentication (failed|error)",
+          "unauthori[sz]ed",
+          "\\b401\\b",
+          "please (run )?/?login",
+          "not logged in"
+        ],
+        "transientPatterns": [
+          "overloaded",
+          "\\b(500|502|503|504)\\b",
+          "ECONN(RESET|REFUSED)",
+          "ETIMEDOUT",
+          "socket hang up",
+          "service unavailable"
+        ],
+        "resetTimePatterns": [
+          "resets? (?:at|on) ([^\\n\\.]+)",
+          "try again (?:in|after) ([^\\n\\.]+)",
+          "available again (?:at|in) ([^\\n\\.]+)"
+        ],
+        "quotaMaxRuntimeMs": 120000
+      }
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini CLI (unverified)",
+      "enabled": false,
+      "command": "gemini",
+      "argvFresh": [],
+      "promptDelivery": "argv",
+      "supportsResume": false,
+      "supportsStreamJson": false,
+      "maxConcurrent": 1,
+      "costHint": "subscription",
+      "verified": null,
+      "detection": {
+        "quotaExitCodes": [],
+        "quotaPatterns": [
+          "quota (exceeded|exhausted)",
+          "rate.?limit(ed)?",
+          "resource_exhausted",
+          "\\b429\\b"
+        ],
+        "authPatterns": ["unauthenticated", "invalid api key", "\\b401\\b", "permission_denied"],
+        "transientPatterns": ["\\b(500|503)\\b", "unavailable", "deadline_exceeded", "ECONNRESET"],
+        "resetTimePatterns": ["retry (?:in|after) ([^\\n\\.]+)", "resets? (?:at|in) ([^\\n\\.]+)"],
+        "quotaMaxRuntimeMs": 120000
+      }
+    },
+    {
+      "id": "codex",
+      "label": "Codex CLI (unverified)",
+      "enabled": false,
+      "command": "codex",
+      "argvFresh": [],
+      "promptDelivery": "argv",
+      "supportsResume": false,
+      "supportsStreamJson": false,
+      "maxConcurrent": 1,
+      "costHint": "subscription",
+      "verified": null,
+      "detection": {
+        "quotaExitCodes": [],
+        "quotaPatterns": [
+          "rate.?limit(ed)?",
+          "quota (exceeded|exhausted)",
+          "insufficient_quota",
+          "usage limit",
+          "\\b429\\b"
+        ],
+        "authPatterns": ["incorrect api key", "invalid_api_key", "\\b401\\b", "not logged in"],
+        "transientPatterns": ["\\b(500|502|503)\\b", "overloaded", "ECONNRESET", "ETIMEDOUT"],
+        "resetTimePatterns": ["try again in ([^\\n\\.]+)", "resets? (?:at|in) ([^\\n\\.]+)"],
+        "quotaMaxRuntimeMs": 120000
+      }
+    }
+  ]
+}
