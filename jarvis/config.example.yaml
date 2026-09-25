@@ -1,0 +1,48 @@
+# Kopieren nach config.yaml (in diesem Ordner) oder nach ~/.jarvis/config.yaml
+# und anpassen. Passwoerter/API-Keys NICHT hier eintragen, sondern als Umgebungsvariablen.
+
+name: Jarvis
+user_name: ""            # wie Jarvis dich nennen soll
+
+llm:
+  # ollama = laeuft komplett lokal auf deinem PC (kostenlos, braucht gute Grafikkarte/RAM)
+  # claude = Claude API (deutlich schlauer bei grossen Aufgaben, kostet pro Nutzung,
+  #          braucht Internet + Umgebungsvariable ANTHROPIC_API_KEY)
+  provider: ollama
+  ollama:
+    host: http://localhost:11434
+    model: qwen3:14b     # mit 8 GB VRAM eher qwen3:8b, mit 24 GB+ z.B. qwen3:32b
+    num_ctx: 32768
+  claude:
+    model: claude-opus-5
+    effort: high         # low | medium | high | xhigh | max
+
+workspace: ~/jarvis-workspace
+
+permissions:
+  mode: ask              # ask = vor jeder veraendernden Aktion fragen, auto = nichts fragen
+  auto_approve:          # diese Tools laufen im ask-Modus trotzdem ohne Rueckfrage
+    - open_url
+  always_ask:            # diese Tools fragen IMMER, auch im auto-Modus
+    - send_email
+
+budget:
+  mode: free             # free = nur kostenlos, budget = darf Kaeufe vorschlagen (kauft nie selbst)
+  max_eur: 0
+
+email:
+  # Beispiel t-online. GMX: imap.gmx.net / mail.gmx.net, Gmail: imap.gmail.com / smtp.gmail.com (App-Passwort!)
+  imap_host: secureimap.t-online.de
+  imap_port: 993
+  smtp_host: securesmtp.t-online.de
+  smtp_port: 465
+  username: ""           # deine E-Mail-Adresse
+  password_env: JARVIS_EMAIL_PASSWORD   # Name der Umgebungsvariable mit dem (E-Mail-)Passwort
+
+calendar:
+  ics_urls: []           # private iCal-Links, z.B. aus Google Kalender -> Einstellungen -> "Privatadresse im iCal-Format"
+  ics_files: []
+  timezone: Europe/Berlin
+
+plugins_dir: ~/.jarvis/plugins
+memory_file: ~/.jarvis/memory.json

@@ -1,0 +1,8 @@
+@echo off
+REM Startet Jarvis unter Windows. Beim ersten Start wird eine virtuelle Umgebung angelegt.
+cd /d "%~dp0"
+if not exist .venv (
+    python -m venv .venv
+    .venv\Scripts\python -m pip install -r requirements.txt
+)
+.venv\Scripts\python -m jarvis %*
