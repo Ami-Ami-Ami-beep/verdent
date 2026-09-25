@@ -25,6 +25,33 @@ class OllamaBackend:
     def reset(self) -> None:
         self.messages = []
 
+    def installed_models(self) -> list[str]:
+        try:
+            return [m["name"] for m in self.http.get(f"{self.host}/api/tags").json().get("models", [])]
+        except (httpx.HTTPError, ValueError):
+            return []
+
+    def _explain_error(self, r: httpx.Response) -> str:
+        """Macht aus Ollama-Fehlern verstaendliche Hinweise."""
+        try:
+            detail = r.json().get("error", r.text)
+        except ValueError:
+            detail = r.text
+        if r.status_code == 404:
+            models = self.installed_models()
+            text = (f"Das Modell '{self.model}' ist in Ollama nicht installiert.\n"
+                    f"Lade es mit:  ollama pull {self.model}\n")
+            if models:
+                text += ("Installiert sind: " + ", ".join(models) + "\n"
+                         "Oder trag eines davon in der config.yaml unter llm.ollama.model ein.")
+            else:
+                text += "Es ist noch gar kein Modell installiert (kleiner Einstieg: ollama pull qwen3:8b)."
+            return text
+        if "does not support tools" in detail:
+            return (f"Das Modell '{self.model}' kann keine Tools benutzen und taugt deshalb nicht fuer Jarvis.\n"
+                    "Nimm z.B. qwen3:8b, qwen3:14b, llama3.1:8b oder mistral-small.")
+        return f"Ollama-Fehler ({r.status_code}): {detail}"
+
     def chat(self, user_text: str, system: str, tools: list[Tool], execute: Executor, on_tool_call: OnToolCall) -> str:
         checkpoint = len(self.messages)
         self.messages.append({"role": "user", "content": user_text})
@@ -47,7 +74,9 @@ class OllamaBackend:
             except httpx.ConnectError:
                 del self.messages[checkpoint:]
                 return f"Ollama ist nicht erreichbar unter {self.host}. Laeuft Ollama? (`ollama serve`)"
-            r.raise_for_status()
+            if r.status_code >= 400:
+                del self.messages[checkpoint:]
+                return self._explain_error(r)
             msg = r.json()["message"]
             msg.pop("thinking", None)
             self.messages.append(msg)

@@ -135,3 +135,16 @@ def test_example_plugin_loads(cfg):
     status = load_plugins()
     assert status == ["OK   wetter.py: weather"]
     registry.unregister_source("plugin:wetter")
+
+
+def test_ollama_missing_model_is_explained(cfg):
+    def handler(request):
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama3.1:8b"}]})
+        return httpx.Response(404, json={"error": "model 'qwen3:14b' not found"})
+
+    backend = OllamaBackend(model="qwen3:14b")
+    backend.http = httpx.Client(transport=httpx.MockTransport(handler))
+    answer = backend.chat("hi", "system", [], lambda n, a: ("", False), lambda n, a: None)
+    assert "ollama pull qwen3:14b" in answer and "llama3.1:8b" in answer
+    assert backend.messages == []  # Verlauf bleibt sauber fuer den naechsten Versuch
