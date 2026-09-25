@@ -1,0 +1,53 @@
+name: Jarvis Windows-App
+
+on:
+  push:
+    paths:
+      - "jarvis/**"
+      - ".github/workflows/jarvis-windows.yml"
+    tags:
+      - "jarvis-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # fuer das Release bei Tags
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: jarvis
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhaengigkeiten installieren
+        run: pip install -r requirements-app.txt pytest
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Jarvis.exe bauen
+        run: pyinstaller jarvis.spec --noconfirm
+
+      - name: Selbsttest der .exe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\Jarvis.exe -ArgumentList "--selftest", "$PWD\selftest.txt" -Wait -PassThru
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jarvis-Windows
+          path: jarvis/dist/Jarvis.exe
+
+      - name: Release anlegen (nur bei Tags jarvis-v*)
+        if: startsWith(github.ref, 'refs/tags/jarvis-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: jarvis/dist/Jarvis.exe

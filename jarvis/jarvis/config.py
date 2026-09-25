@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import copy
 import os
+import shutil
 from pathlib import Path
 
 import yaml
 
 JARVIS_HOME = Path(os.environ.get("JARVIS_HOME", Path.home() / ".jarvis"))
+EXAMPLE_CONFIG = Path(__file__).parent / "config.example.yaml"
 
 DEFAULTS: dict = {
     "name": "Jarvis",
@@ -85,3 +87,14 @@ def load_config(explicit: str | None = None) -> dict:
     for key in ("workspace", "plugins_dir", "memory_file"):
         cfg[key] = str(Path(cfg[key]).expanduser())
     return cfg
+
+
+def ensure_user_config() -> Path:
+    """Gibt den Pfad der Config zurueck. Gibt es noch keine, wird die Vorlage nach ~/.jarvis kopiert."""
+    path = find_config_path()
+    if path:
+        return path
+    path = JARVIS_HOME / "config.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(EXAMPLE_CONFIG, path)
+    return path

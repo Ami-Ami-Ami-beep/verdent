@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis</title>
+<style>
+  :root {
+    --bg: #0b1016;
+    --panel: #111922;
+    --panel-2: #16212c;
+    --line: #1f2d3a;
+    --text: #dbe7f0;
+    --muted: #7d93a6;
+    --accent: #38d6ff;
+    --accent-dim: rgba(56, 214, 255, 0.14);
+    --warn: #ffb547;
+    --warn-dim: rgba(255, 181, 71, 0.12);
+    --danger: #ff6b6b;
+    --ok: #4ade80;
+    --radius: 14px;
+    --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", Consolas, "SF Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 var(--font);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:disabled { cursor: default; opacity: .45; }
+
+  /* ---------- Kopfzeile ---------- */
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #0f171f, var(--bg));
+  }
+  .reactor {
+    width: 38px; height: 38px; border-radius: 50%; flex: none;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 14px rgba(56, 214, 255, .45), inset 0 0 10px rgba(56, 214, 255, .35);
+    display: grid; place-items: center;
+  }
+  .reactor::after {
+    content: ""; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  }
+  body.busy .reactor { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 26px rgba(56, 214, 255, .8), inset 0 0 14px rgba(56, 214, 255, .6); } }
+  .title { flex: 1; min-width: 0; }
+  .title h1 { margin: 0; font-size: 17px; letter-spacing: .18em; font-weight: 600; }
+  .title .sub { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tb { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 7px 12px; font-size: 13.5px;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #041018; border-color: var(--accent); font-weight: 600; }
+  .toggle { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); user-select: none; cursor: pointer; }
+  .toggle input { accent-color: var(--warn); width: 15px; height: 15px; }
+  .toggle.on { color: var(--warn); }
+
+  /* ---------- Chat ---------- */
+  #chat { flex: 1; overflow-y: auto; padding: 22px 18px 8px; }
+  .wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 88%; padding: 11px 15px; border-radius: var(--radius);
+    background: var(--panel); border: 1px solid var(--line);
+    overflow-wrap: anywhere;
+  }
+  .msg.user .bubble { background: var(--accent-dim); border-color: rgba(56, 214, 255, .3); white-space: pre-wrap; }
+  .msg.error .bubble { border-color: var(--danger); color: #ffc9c9; white-space: pre-wrap; }
+  .bubble p { margin: .35em 0; }
+  .bubble p:first-child { margin-top: 0; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul, .bubble ol { margin: .35em 0; padding-left: 1.4em; }
+  .bubble h3 { margin: .6em 0 .3em; font-size: 15.5px; }
+  .bubble a { color: var(--accent); }
+  .bubble code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+  .bubble pre {
+    background: #070b10; border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; overflow-x: auto; margin: .5em 0;
+  }
+  .bubble pre code { background: none; padding: 0; white-space: pre; }
+  .steps { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .steps .step { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .steps .step b { color: var(--accent); font-weight: 500; }
+  details.steps { margin-bottom: 8px; }
+  details.steps summary { cursor: pointer; font-family: var(--font); font-size: 12.5px; }
+  .thinking { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13.5px; }
+  .dots span { display: inline-block; width: 6px; height: 6px; margin-right: 3px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay: .2s; }
+  .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+
+  .approval {
+    margin-top: 10px; border: 1px solid var(--warn); background: var(--warn-dim);
+    border-radius: 12px; padding: 10px 12px;
+  }
+  .approval .head { color: var(--warn); font-weight: 600; font-size: 14px; }
+  .approval .args { margin: 8px 0; font-family: var(--mono); font-size: 12.5px; max-height: 260px; overflow: auto; }
+  .approval .arg { margin-bottom: 6px; }
+  .approval .arg .k { color: var(--muted); }
+  .approval .arg pre { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+  .approval .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .approval .done { color: var(--muted); font-size: 13px; }
+
+  /* ---------- Start ---------- */
+  .welcome { text-align: center; padding: 48px 12px 12px; }
+  .welcome h2 { margin: 0 0 6px; font-weight: 500; font-size: 22px; }
+  .welcome p { color: var(--muted); margin: 0 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 14px; font-size: 13.5px;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .banner {
+    max-width: 860px; margin: 0 auto 12px; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--danger); background: rgba(255, 107, 107, .08); white-space: pre-wrap;
+  }
+  .banner .btn { margin-top: 8px; }
+
+  /* ---------- Eingabe ---------- */
+  footer { padding: 10px 18px 16px; }
+  .composer {
+    max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 8px 8px 14px;
+  }
+  .composer:focus-within { border-color: rgba(56, 214, 255, .55); }
+  textarea#input {
+    flex: 1; resize: none; border: 0; outline: 0; background: transparent; color: var(--text);
+    font: inherit; max-height: 200px; min-height: 24px; padding: 6px 0;
+  }
+  textarea#input::placeholder { color: var(--muted); }
+  #send { width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--accent); color: #041018; font-size: 18px; flex: none; }
+  .hint { max-width: 860px; margin: 6px auto 0; color: var(--muted); font-size: 11.5px; text-align: center; }
+
+  /* ---------- Einstellungen ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(3, 6, 10, .72); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .modal.open { display: flex; }
+  .sheet {
+    width: min(860px, 100%); height: min(720px, 100%); display: flex; flex-direction: column; gap: 10px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+  }
+  .sheet h2 { margin: 0; font-size: 17px; font-weight: 600; }
+  .sheet .path { color: var(--muted); font-size: 12.5px; font-family: var(--mono); overflow-wrap: anywhere; }
+  .sheet textarea {
+    flex: 1; resize: none; background: #070b10; color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; font: 13px/1.5 var(--mono); outline: 0; tab-size: 2;
+  }
+  .sheet .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sheet .row .spacer { flex: 1; }
+  #cfg-error { color: var(--danger); white-space: pre-wrap; font-size: 13px; font-family: var(--mono); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #22313f; border-radius: 10px; border: 2px solid var(--bg); }
+
+  @media (max-width: 640px) {
+    header { flex-wrap: wrap; }
+    .tb { width: 100%; justify-content: flex-end; }
+    .bubble { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="reactor" aria-hidden="true"></div>
+  <div class="title">
+    <h1 id="name">J.A.R.V.I.S.</h1>
+    <div class="sub" id="status">Starte ...</div>
+  </div>
+  <div class="tb">
+    <label class="toggle" id="auto-wrap" title="Veraendernde Aktionen ohne Rueckfrage ausfuehren (ausser always_ask)">
+      <input type="checkbox" id="auto"> Auto-Modus
+    </label>
+    <button class="btn" id="new">Neuer Chat</button>
+    <button class="btn" id="settings">Einstellungen</button>
+  </div>
+</header>
+
+<main id="chat"><div class="wrap" id="log"></div></main>
+
+<footer>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Frag Jarvis etwas ..." disabled></textarea>
+    <button id="send" title="Senden (Enter)" disabled>&#10148;</button>
+  </div>
+  <div class="hint">Enter = senden · Shift+Enter = neue Zeile</div>
+</footer>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2>Einstellungen</h2>
+    <div class="path" id="cfg-path"></div>
+    <textarea id="cfg-text" spellcheck="false"></textarea>
+    <div id="cfg-error"></div>
+    <div class="row">
+      <button class="btn" data-folder="config">Config-Ordner</button>
+      <button class="btn" data-folder="workspace">Arbeitsordner</button>
+      <button class="btn" data-folder="plugins">Plugin-Ordner</button>
+      <span class="spacer"></span>
+      <button class="btn" id="cfg-cancel">Abbrechen</button>
+      <button class="btn primary" id="cfg-save">Speichern &amp; neu starten</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const log = $("log"), chat = $("chat"), input = $("input"), sendBtn = $("send");
+let api = null, busy = false, current = null, state = null;
+
+const SUGGESTIONS = [
+  "Was habe ich heute und morgen für Termine?",
+  "Hab ich neue E-Mails?",
+  "Was für einen PC habe ich?",
+  "Räum meinen Downloads-Ordner auf",
+  "Richte mir einen Minecraft-Server ein",
+];
+
+// ---------- Hilfsfunktionen ----------
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2">$2</a>');
+}
+
+// Kleiner Markdown-Renderer (Codebloecke, Listen, Ueberschriften, fett, Links)
+function md(text) {
+  const parts = String(text).split(/```[^\n]*\n?/);
+  let html = "";
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) { html += `<pre><code>${esc(part.replace(/\n$/, ""))}</code></pre>`; return; }
+    let list = null;
+    const close = () => { if (list) { html += `</${list}>`; list = null; } };
+    let para = [];
+    const flush = () => { if (para.length) { html += `<p>${para.join("<br>")}</p>`; para = []; } };
+    for (const raw of part.split("\n")) {
+      const line = esc(raw);
+      let m;
+      if (!raw.trim()) { flush(); close(); continue; }
+      if ((m = line.match(/^#{1,6}\s+(.*)/))) { flush(); close(); html += `<h3>${inline(m[1])}</h3>`; continue; }
+      if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { flush(); if (list !== "ul") { close(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+      if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flush(); if (list !== "ol") { close(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+      close(); para.push(inline(line));
+    }
+    flush(); close();
+  });
+  return html;
+}
+
+function scrollDown() { chat.scrollTop = chat.scrollHeight; }
+
+function addMsg(role, html) {
+  const el = document.createElement("div");
+  el.className = `msg ${role}`;
+  el.innerHTML = `<div class="bubble">${html}</div>`;
+  log.appendChild(el);
+  scrollDown();
+  return el.querySelector(".bubble");
+}
+
+function setBusy(b) {
+  busy = b;
+  document.body.classList.toggle("busy", b);
+  input.disabled = b || !state?.ok;
+  sendBtn.disabled = b || !state?.ok;
+  $("new").disabled = b;
+  if (!b) input.focus();
+}
+
+function welcome() {
+  log.innerHTML = "";
+  const hello = state?.user ? `Hallo ${esc(state.user)}!` : "Hallo!";
+  const el = document.createElement("div");
+  el.className = "welcome";
+  el.innerHTML = `<h2>${hello} Wie kann ich helfen?</h2><p>Ich kann Dateien bearbeiten, Programme ausführen, im Internet suchen, deine E-Mails und Termine checken und mir selbst neue Fähigkeiten bauen.</p><div class="chips"></div>`;
+  for (const s of SUGGESTIONS) {
+    const c = document.createElement("button");
+    c.className = "chip"; c.textContent = s;
+    c.onclick = () => { input.value = s; send(); };
+    el.querySelector(".chips").appendChild(c);
+  }
+  log.appendChild(el);
+}
+
+function showState(s) {
+  state = s;
+  if (s.ok) {
+    $("name").textContent = s.name.toUpperCase().split("").join(".") + ".";
+    document.title = s.name;
+    const plugins = s.plugins.length ? ` · ${s.plugins.length} Plugin(s)` : "";
+    $("status").textContent = `${s.provider === "claude" ? "Claude" : "Lokal (Ollama)"} · ${s.model}${plugins}`;
+    $("auto").checked = s.auto;
+    $("auto-wrap").classList.toggle("on", s.auto);
+    welcome();
+    const broken = s.plugins.filter((p) => p.startsWith("FEHLER"));
+    if (broken.length) addMsg("error", esc("Plugins mit Fehlern:\n" + broken.join("\n")));
+  } else {
+    $("status").textContent = "Nicht gestartet";
+    log.innerHTML = `<div class="banner"><b>Jarvis konnte nicht starten.</b>\n${esc(s.error)}\n<button class="btn" onclick="openSettings()">Einstellungen öffnen</button></div>`;
+  }
+  setBusy(false);
+}
+
+// ---------- Senden ----------
+async function send() {
+  const text = input.value.trim();
+  if (!text || busy || !api) return;
+  if (log.querySelector(".welcome")) log.innerHTML = "";
+  addMsg("user", esc(text));
+  input.value = ""; autosize();
+  current = addMsg("assistant", `<div class="steps"></div><div class="thinking"><span class="dots"><span></span><span></span><span></span></span> denkt nach ...</div><div class="approvals"></div>`);
+  setBusy(true);
+  const ok = await api.send(text);
+  if (!ok) { current.innerHTML = "Jarvis ist gerade beschäftigt."; setBusy(false); }
+}
+
+// ---------- Ereignisse aus Python ----------
+window.jarvisEvent = (e) => {
+  if (e.kind === "tool" && current) {
+    const step = document.createElement("div");
+    step.className = "step";
+    step.innerHTML = `→ <b>${esc(e.name)}</b> ${esc(e.args)}`;
+    step.title = e.args;
+    current.querySelector(".steps").appendChild(step);
+    scrollDown();
+  } else if (e.kind === "approval" && current) {
+    const box = document.createElement("div");
+    box.className = "approval";
+    const args = Object.entries(e.args).map(([k, v]) => `<div class="arg"><span class="k">${esc(k)}:</span><pre>${esc(v)}</pre></div>`).join("");
+    box.innerHTML = `<div class="head">⚠ Jarvis möchte „${esc(e.tool)}“ ausführen</div><div class="args">${args}</div>
+      <div class="actions">
+        <button class="btn primary" data-a="yes">Erlauben</button>
+        <button class="btn" data-a="always">Immer erlauben (diese Sitzung)</button>
+        <button class="btn" data-a="no">Ablehnen</button>
+      </div>`;
+    box.querySelectorAll("button").forEach((b) => b.onclick = () => {
+      api.answer_approval(e.id, b.dataset.a);
+      const label = { yes: "✓ erlaubt", always: "✓ für diese Sitzung erlaubt", no: "✗ abgelehnt" }[b.dataset.a];
+      box.innerHTML = `<div class="done">${esc(e.tool)}: ${label}</div>`;
+    });
+    current.querySelector(".approvals").appendChild(box);
+    scrollDown();
+  } else if (e.kind === "answer" && current) {
+    const steps = current.querySelector(".steps");
+    const n = steps.children.length;
+    const stepsHtml = n ? `<details class="steps"><summary>${n} Schritt${n > 1 ? "e" : ""}</summary>${steps.innerHTML}</details>` : "";
+    current.innerHTML = stepsHtml + md(e.text || "(keine Antwort)");
+    current = null;
+    scrollDown();
+  } else if (e.kind === "error") {
+    if (current) { current.closest(".msg").remove(); current = null; }
+    addMsg("error", esc(e.text));
+  } else if (e.kind === "idle") {
+    if (current) { current.closest(".msg").remove(); current = null; }
+    setBusy(false);
+  }
+};
+
+// Links im Standardbrowser oeffnen statt im App-Fenster
+document.addEventListener("click", (ev) => {
+  const a = ev.target.closest("a[href]");
+  if (!a) return;
+  ev.preventDefault();
+  api?.open_link(a.href);
+});
+
+// ---------- Eingabefeld ----------
+function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; }
+input.addEventListener("input", autosize);
+input.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(); }
+});
+sendBtn.onclick = send;
+
+$("new").onclick = async () => { if (await api.new_chat()) welcome(); };
+$("auto").onchange = (ev) => {
+  api.set_auto(ev.target.checked);
+  $("auto-wrap").classList.toggle("on", ev.target.checked);
+};
+
+// ---------- Einstellungen ----------
+async function openSettings() {
+  const c = await api.get_config();
+  $("cfg-path").textContent = c.path;
+  $("cfg-text").value = c.text;
+  $("cfg-error").textContent = "";
+  $("modal").classList.add("open");
+  $("cfg-text").focus();
+}
+$("settings").onclick = openSettings;
+$("cfg-cancel").onclick = () => $("modal").classList.remove("open");
+$("cfg-save").onclick = async () => {
+  $("cfg-save").disabled = true;
+  const r = await api.save_config($("cfg-text").value);
+  $("cfg-save").disabled = false;
+  if (r.ok) { $("modal").classList.remove("open"); showState(r); }
+  else if (r.error && r.error.startsWith("Fehler in der Config")) $("cfg-error").textContent = r.error;
+  else { $("modal").classList.remove("open"); showState(r); }
+};
+document.querySelectorAll("[data-folder]").forEach((b) => b.onclick = () => api.open_folder(b.dataset.folder));
+$("cfg-text").addEventListener("keydown", (ev) => {
+  if (ev.key === "Tab") { ev.preventDefault(); document.execCommand("insertText", false, "  "); }
+});
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") $("modal").classList.remove("open"); });
+
+// ---------- Start ----------
+window.addEventListener("pywebviewready", async () => {
+  api = window.pywebview.api;
+  showState(await api.init());
+});
+</script>
+</body>
+</html>

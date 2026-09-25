@@ -6,6 +6,8 @@ from jarvis.tools import context
 
 @pytest.fixture
 def cfg(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))  # nichts im echten Home-Ordner anlegen
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.setenv("JARVIS_CONFIG", str(tmp_path / "none.yaml"))
     monkeypatch.chdir(tmp_path)
     c = load_config()

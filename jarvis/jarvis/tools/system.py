@@ -13,6 +13,8 @@ from datetime import datetime
 from .registry import CONFIRM, tool
 
 IS_WINDOWS = sys.platform.startswith("win")
+# Verhindert, dass unter Windows fuer jeden Befehl ein schwarzes Konsolenfenster aufpoppt
+NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
 
 @tool(
@@ -45,6 +47,8 @@ def run_command(command: str, cwd: str | None = None, timeout: int = 120) -> str
             timeout=timeout,
             encoding="utf-8",
             errors="replace",
+            stdin=subprocess.DEVNULL,
+            creationflags=NO_WINDOW,
         )
     except subprocess.TimeoutExpired as e:
         return f"Timeout nach {timeout}s.\nstdout:\n{e.stdout or ''}\nstderr:\n{e.stderr or ''}"
