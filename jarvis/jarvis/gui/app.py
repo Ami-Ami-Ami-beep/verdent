@@ -150,7 +150,30 @@ class Api:
             subprocess.Popen(["xdg-open", path])
 
 
+def _show_fatal(message: str) -> None:
+    """Fehler beim Start sichtbar machen (ohne Konsole sieht man sonst nichts)."""
+    log = Path.home() / ".jarvis" / "error.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(message, encoding="utf-8")
+    if sys.platform.startswith("win"):
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(0, f"{message[-1500:]}\n\nDetails: {log}", "Jarvis konnte nicht starten", 0x10)
+    else:
+        print(message, file=sys.stderr)
+
+
 def main() -> None:
+    try:
+        _run_window()
+    except Exception:
+        import traceback
+
+        _show_fatal(traceback.format_exc())
+        raise SystemExit(1)
+
+
+def _run_window() -> None:
     import webview
 
     api = Api()

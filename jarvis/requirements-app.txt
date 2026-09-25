@@ -1,5 +1,3 @@
-# Zusaetzlich fuer die Desktop-App und den Build der Jarvis.exe
--r requirements.txt
-pywebview>=5
-psutil>=5.9        # praktisch fuer selbstgeschriebene Plugins (CPU, RAM, Prozesse)
+# Zusaetzlich fuer den Build der Jarvis.exe
+-r requirements-gui.txt
 pyinstaller>=6.10

@@ -1,0 +1,4 @@
+# Fuer die Desktop-App (Fenster statt Terminal)
+-r requirements.txt
+pywebview>=5
+psutil>=5.9        # praktisch fuer selbstgeschriebene Plugins (CPU, RAM, Prozesse)

@@ -35,7 +35,9 @@ Beim ersten Start legt Jarvis `C:\Users\<du>\.jarvis\config.yaml` an. Über **Ei
 Tipp: Rechtsklick auf `Jarvis.exe` → *An Start anheften*. Für den Autostart eine Verknüpfung in den Ordner `shell:startup` legen (Win+R → `shell:startup`).
 
 **Selbst bauen:** `build_windows.bat` doppelklicken, danach liegt die App unter `dist\Jarvis.exe`.
-**Ohne Build starten:** `pip install -r requirements-app.txt`, dann `python -m jarvis.gui`.
+**App direkt aus dem Ordner starten (ohne .exe):** `Jarvis_App_starten.bat` doppelklicken. Beim ersten Mal richtet sie alles ein und legt eine **Jarvis-Verknüpfung auf dem Desktop** an. Danach startest du Jarvis einfach über die Verknüpfung. Rechtsklick → *An Taskleiste anheften* geht auch.
+
+**Ohne Build starten:** `pip install -r requirements-gui.txt`, dann `python -m jarvis.gui`.
 
 Hinweis: In der `.exe` stecken nur die Python-Module, die Jarvis selbst nutzt, plus ein paar häufige (z. B. `psutil`, `sqlite3`, `csv`, `zipfile`). Braucht ein selbstgeschriebenes Plugin weitere Pakete, starte Jarvis aus dem Quellcode (`python -m jarvis.gui`) und installiere sie mit `pip`.
 
