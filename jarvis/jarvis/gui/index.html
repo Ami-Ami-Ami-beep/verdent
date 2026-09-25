@@ -413,7 +413,7 @@ $("cfg-save").onclick = async () => {
   const r = await api.save_config($("cfg-text").value);
   $("cfg-save").disabled = false;
   if (r.ok) { $("modal").classList.remove("open"); showState(r); }
-  else if (r.error && r.error.startsWith("Fehler in der Config")) $("cfg-error").textContent = r.error;
+  else if (/^(Fehler in der Config|Jarvis arbeitet)/.test(r.error || "")) $("cfg-error").textContent = r.error;
   else { $("modal").classList.remove("open"); showState(r); }
 };
 document.querySelectorAll("[data-folder]").forEach((b) => b.onclick = () => api.open_folder(b.dataset.folder));

@@ -2,6 +2,8 @@ name: Jarvis Windows-App
 
 on:
   push:
+    branches:
+      - "**"
     paths:
       - "jarvis/**"
       - ".github/workflows/jarvis-windows.yml"
