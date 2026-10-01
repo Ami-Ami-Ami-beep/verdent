@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: botpanel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-botpanel}
+      POSTGRES_DB: botpanel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botpanel"]
+      interval: 5s
+      retries: 10
+    # Für lokale Entwicklung erreichbar machen; auf dem VPS NICHT nach außen öffnen.
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  api:
+    build: { context: ., target: api }
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://botpanel:${POSTGRES_PASSWORD:-botpanel}@postgres:5432/botpanel
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    # Nur lokal lauschen; davor gehört ein Reverse-Proxy mit HTTPS (z. B. Caddy, siehe README).
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  bot-runner:
+    build: { context: ., target: bot-runner }
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://botpanel:${POSTGRES_PASSWORD:-botpanel}@postgres:5432/botpanel
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      api: { condition: service_started }
+
+volumes:
+  pgdata:
+  redisdata:

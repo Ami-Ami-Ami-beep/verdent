@@ -1,0 +1,27 @@
+{
+  "name": "@botpanel/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BotPanel – Windows-App",
+  "author": "BotPanel",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json && electron .",
+    "dist:win": "tsc -p tsconfig.json && electron-builder --win --x64 --publish never",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "de.botpanel.desktop",
+    "productName": "BotPanel",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["dist/**", "static/**", "package.json"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "BotPanel" }
+  }
+}

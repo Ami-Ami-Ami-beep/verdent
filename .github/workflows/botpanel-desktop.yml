@@ -1,0 +1,32 @@
+name: BotPanel Windows-App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["botpanel/apps/desktop/**"]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: botpanel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: botpanel/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: botpanel/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @botpanel/desktop dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BotPanel-Setup
+          path: botpanel/apps/desktop/release/*.exe

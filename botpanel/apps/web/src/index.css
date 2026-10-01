@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blurple: #5865f2;
+  --color-blurple-dark: #4752c4;
+}
+
+@utility input {
+  @apply w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-blurple;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-blurple text-white hover:bg-blurple-dark;
+}
+@utility btn-secondary {
+  @apply btn bg-zinc-800 text-zinc-100 hover:bg-zinc-700;
+}
+@utility btn-danger {
+  @apply btn bg-red-600/90 text-white hover:bg-red-600;
+}
+@utility card {
+  @apply rounded-xl border border-zinc-800 bg-zinc-900/60 p-5;
+}

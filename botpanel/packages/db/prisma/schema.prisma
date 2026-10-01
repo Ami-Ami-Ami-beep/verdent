@@ -1,0 +1,71 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Ein Nutzer der Website/App, angemeldet über Discord.
+model User {
+  id        String    @id @default(cuid())
+  discordId String    @unique
+  username  String
+  avatar    String?
+  createdAt DateTime  @default(now())
+  bots      Bot[]
+  sessions  Session[]
+}
+
+/// Login-Sitzung. Der Discord-Access-Token wird verschlüsselt gespeichert,
+/// damit die API prüfen kann, auf welchen Servern der Nutzer Admin ist.
+model Session {
+  id             String   @id
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessTokenEnc String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Ein Discord-Bot, der auf dem VPS läuft.
+model Bot {
+  id            String         @id @default(cuid())
+  ownerId       String
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name          String
+  /// Discord-ID des Bot-Nutzers (= Application-ID / Client-ID)
+  applicationId String         @unique
+  avatar        String?
+  /// Bot-Token, AES-256-GCM verschlüsselt
+  tokenEnc      String
+  /// Soll der Bot laufen? Der bot-runner startet beim Hochfahren alle Bots mit enabled = true.
+  enabled       Boolean        @default(false)
+  /// Partner-Bot für den gegenseitigen Schutz (Bot A ↔ Bot B)
+  partnerBotId  String?
+  partnerBot    Bot?           @relation("BotPartner", fields: [partnerBotId], references: [id], onDelete: SetNull)
+  partnerOf     Bot[]          @relation("BotPartner")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  configs       ModuleConfig[]
+
+  @@index([ownerId])
+}
+
+/// Konfiguration eines Moduls (welcome, tickets, …) für einen Bot auf einem Server.
+model ModuleConfig {
+  id        String   @id @default(cuid())
+  botId     String
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  guildId   String
+  module    String
+  config    Json
+  updatedAt DateTime @updatedAt
+
+  @@unique([botId, guildId, module])
+  @@index([botId])
+}
