@@ -105,7 +105,7 @@
     </div>
   </section>
 
-  <details>
+  <details open>
     <summary>Hinweise &amp; Protokoll</summary>
     <p>Schließe vorher die Govee- und die Lotus-Lantern-App ganz, sonst sind die Geräte „belegt“
       und tauchen in der Liste nicht auf. Govee heißt dort meist „ihoment_…“, „Govee_…“ oder „H6…“,
@@ -144,7 +144,21 @@
     optionalServices: [GOVEE_SERVICE],
     async findChar(server) {
       const s = await server.getPrimaryService(GOVEE_SERVICE);
-      return s.getCharacteristic(GOVEE_WRITE);
+      // Diagnose: alle Kanäle der Lampe auflisten und Rückmeldungen abonnieren.
+      const chars = await s.getCharacteristics();
+      for (const c of chars) {
+        const p = c.properties;
+        const caps = ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(', ');
+        log(`Govee Kanal …${c.uuid.slice(-4)}: ${caps}`);
+        if (p.notify || p.indicate) {
+          try {
+            c.addEventListener('characteristicvaluechanged', (e) =>
+              log(`Govee → (${c.uuid.slice(-4)}) ${hex(new Uint8Array(e.target.value.buffer))}`));
+            await c.startNotifications();
+          } catch (e) { log(`Govee Abo …${c.uuid.slice(-4)} fehlgeschlagen: ${e.message}`); }
+        }
+      }
+      return chars.find(c => c.uuid === GOVEE_WRITE) || s.getCharacteristic(GOVEE_WRITE);
     },
     power: (on) => [goveePacket([0x33, 0x01, on ? 1 : 0])],
     // Ältere Modelle nutzen Modus 0x02, neuere 0x0D – wir senden beide, unbekannte werden ignoriert.
@@ -195,7 +209,10 @@
       dev.queue = dev.queue.then(async () => {
         for (const p of packets) {
           try {
-            if (dev.char.writeValueWithoutResponse) await dev.char.writeValueWithoutResponse(p);
+            // Mit Bestätigung schreiben, wenn das Gerät es kann – dann sehen wir Fehler statt stiller Verluste.
+            const props = dev.char.properties || {};
+            if (props.write && dev.char.writeValueWithResponse) await dev.char.writeValueWithResponse(p);
+            else if (props.writeWithoutResponse && dev.char.writeValueWithoutResponse) await dev.char.writeValueWithoutResponse(p);
             else await dev.char.writeValue(p);
             log(`${proto.label} ← ${hex(p)}`);
           } catch (e) {
@@ -223,7 +240,9 @@
         dev.char = await proto.findChar(server);
         setState(true, 'verbunden');
         log(`${proto.label} verbunden: ${device.name}`);
+        dev.connectedAt = Date.now();
         if (proto.keepAlive) {
+          dev.send([proto.keepAlive()]);
           dev.timer = setInterval(() => dev.send([proto.keepAlive()]), 2000);
         }
       } catch (e) {
@@ -236,7 +255,8 @@
       clearInterval(dev.timer);
       dev.char = null;
       setState(false, 'getrennt');
-      log(`${proto.label} getrennt`);
+      const secs = dev.connectedAt ? ((Date.now() - dev.connectedAt) / 1000).toFixed(1) : '?';
+      log(`${proto.label} getrennt (nach ${secs} s)`);
     }
 
     $('.connect').addEventListener('click', () => {
