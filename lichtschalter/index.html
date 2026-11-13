@@ -107,7 +107,9 @@
 
   <details>
     <summary>Hinweise &amp; Protokoll</summary>
-    <p>Schließe vorher die Govee- und die Lotus-Lantern-App ganz, sonst sind die Geräte „belegt“.
+    <p>Schließe vorher die Govee- und die Lotus-Lantern-App ganz, sonst sind die Geräte „belegt“
+      und tauchen in der Liste nicht auf. Govee heißt dort meist „ihoment_…“, „Govee_…“ oder „H6…“,
+      der Streifen meist „ELK-BLEDOM…“, „MELK…“ oder „LEDBLE…“.
       Nach jedem Neuladen der Seite musst du einmal auf „Verbinden“ tippen.</p>
     <div id="log"></div>
   </details>
@@ -208,14 +210,11 @@
       if (!navigator.bluetooth) { document.getElementById('noBt').classList.add('show'); return; }
       try {
         setState(false, 'suche …');
-        let device;
-        try {
-          device = await navigator.bluetooth.requestDevice({ filters: proto.filters, optionalServices: proto.optionalServices });
-        } catch (e) {
-          if (e.name !== 'NotFoundError') throw e;
-          // Nichts Passendes gefunden – alle Geräte anzeigen
-          device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: proto.optionalServices });
-        }
+        // Alle Geräte in der Nähe zeigen – die Gerätenamen sind je nach Modell zu unterschiedlich zum Filtern.
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: proto.optionalServices,
+        });
         dev.device = device;
         $('.name').textContent = device.name || '(ohne Namen)';
         device.addEventListener('gattserverdisconnected', onDisconnect);
