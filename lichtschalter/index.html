@@ -55,6 +55,11 @@
   .connected .controls { display: block; }
   .name { font-size: 12px; color: var(--muted); margin-top: 4px; word-break: break-all; }
 
+  .cloud { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .connected .cloud { display: none; }
+  .cloud-title { font-size: 13px; color: var(--muted); }
+  .apikey { width: 100%; font: inherit; color: var(--text); background: #0b0d11;
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
   details { margin-top: 24px; color: var(--muted); font-size: 13px; }
   summary { cursor: pointer; }
   #log { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 12px;
@@ -65,7 +70,7 @@
 <body>
 <main>
   <h1>Lichtschalter</h1>
-  <p class="sub">Govee-Lampe und LED-Streifen per Bluetooth · Version 3</p>
+  <p class="sub">Govee-Lampe und LED-Streifen per Bluetooth oder Cloud · Version 4</p>
 
   <div id="noBt" class="warn">
     Dieser Browser kann kein Bluetooth. Auf dem iPhone öffne die Seite im kostenlosen Browser
@@ -88,6 +93,13 @@
       <div class="row"><button class="on">An</button><button class="off">Aus</button></div>
       <div class="row"><label>Farbe</label><input type="color" class="color" value="#ffb347"></div>
       <div class="row"><label>Helligkeit</label><input type="range" class="bright" min="1" max="100" value="80"></div>
+    </div>
+    <div class="cloud">
+      <div class="cloud-title">Oder über die Govee-Cloud (für neuere Lampen wie die H6022)</div>
+      <div class="row"><input type="password" class="apikey" placeholder="Govee-API-Schlüssel" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="row"><button class="cloud-connect">Über Cloud verbinden</button></div>
+      <p class="cloud-title">Schlüssel bekommst du in der Govee-Home-App: Profil → Einstellungen (Zahnrad) →
+        „API-Schlüssel beantragen“. Er kommt per E-Mail und bleibt nur auf diesem Handy gespeichert.</p>
     </div>
   </section>
 
@@ -158,7 +170,11 @@
         if (p.notify || p.indicate) {
           try {
             c.addEventListener('characteristicvaluechanged', (e) =>
-              log(`Govee → (${c.uuid.slice(-4)}) ${hex(new Uint8Array(e.target.value.buffer))}`));
+            {
+              const v = e.target.value;
+              const bytes = v ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : new Uint8Array();
+              log(`Govee → (${c.uuid.slice(-4)}) ${bytes.length ? hex(bytes) : '(leer)'}`);
+            });
             await withTimeout(c.startNotifications(), 2000);
             log(`Govee Abo …${c.uuid.slice(-4)} aktiv`);
           } catch (e) { log(`Govee Abo …${c.uuid.slice(-4)} fehlgeschlagen: ${errText(e)}`); }
@@ -173,6 +189,45 @@
     brightness: (pct) => [goveePacket([0x33, 0x04, Math.round(pct * 2.55)])],
     keepAlive: () => goveePacket([0xaa, 0x01]),
   };
+
+  // ---------- Govee-Cloud (offizielle Developer-API) ----------
+  // Für Lampen, die nur verschlüsselte Bluetooth-Befehle annehmen. Der Schlüssel bleibt nur auf diesem Gerät.
+  const GOVEE_API = 'https://openapi.api.govee.com/router/api/v1';
+  const KEY_STORE = 'lichtschalter.goveeApiKey';
+  const store = {
+    get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* egal */ } },
+  };
+  async function goveeFetch(key, path, body) {
+    let res;
+    try {
+      res = await withTimeout(fetch(GOVEE_API + path, {
+        method: body ? 'POST' : 'GET',
+        headers: Object.assign({ 'Govee-API-Key': key }, body ? { 'Content-Type': 'application/json' } : {}),
+        body: body ? JSON.stringify(body) : undefined,
+      }), 10000);
+    } catch (e) {
+      throw { name: 'Netzwerk', message: `${errText(e)} – evtl. lässt die Govee-Cloud keine Anfragen von Webseiten zu (CORS)` };
+    }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || (json.code && json.code !== 200)) {
+      throw { name: `HTTP ${res.status}`, message: json.msg || json.message || 'unbekannte Antwort' };
+    }
+    return json;
+  }
+  function makeCloud(key, dev) {
+    let n = 0;
+    const control = (type, instance, value) => goveeFetch(key, '/device/control', {
+      requestId: `ls-${Date.now()}-${n++}`,
+      payload: { sku: dev.sku, device: dev.device, capability: { type, instance, value } },
+    }).then(() => log(`Cloud ← ${instance} = ${value}`))
+      .catch((e) => log(`Cloud Fehler (${instance}): ${errText(e)}`));
+    return {
+      power: (on) => control('devices.capabilities.on_off', 'powerSwitch', on ? 1 : 0),
+      color: ([r, g, b]) => control('devices.capabilities.color_setting', 'colorRgb', (r << 16) + (g << 8) + b),
+      brightness: (pct) => control('devices.capabilities.range', 'brightness', pct),
+    };
+  }
 
   // ---------- LED-Streifen (Lotus Lantern / ELK-BLEDOM) ----------
   const ELK_SERVICES = ['0000fff0-0000-1000-8000-00805f9b34fb', '0000ffe0-0000-1000-8000-00805f9b34fb'];
@@ -284,22 +339,55 @@
     }
 
     $('.connect').addEventListener('click', () => {
-      if (dev.device && dev.device.gatt.connected) dev.device.gatt.disconnect();
+      if (dev.cloud) { dev.cloud = null; setState(false, 'getrennt'); log('Cloud getrennt'); }
+      else if (dev.device && dev.device.gatt.connected) dev.device.gatt.disconnect();
       else connect();
     });
-    $('.on').addEventListener('click', () => dev.send(proto.power(true)));
-    $('.off').addEventListener('click', () => dev.send(proto.power(false)));
-    $('.color').addEventListener('change', (e) => dev.send(proto.color(hexToRgb(e.target.value))));
-    $('.bright').addEventListener('change', (e) => dev.send(proto.brightness(+e.target.value)));
+
+    // Einheitliche Befehle: Cloud, wenn aktiv, sonst Bluetooth.
+    dev.power = (on) => dev.cloud ? dev.cloud.power(on) : dev.send(proto.power(on));
+    dev.color = (rgb) => dev.cloud ? dev.cloud.color(rgb) : dev.send(proto.color(rgb));
+    dev.brightness = (pct) => dev.cloud ? dev.cloud.brightness(pct) : dev.send(proto.brightness(pct));
+    dev.ready = () => !!(dev.cloud || dev.char);
+
+    $('.on').addEventListener('click', () => dev.power(true));
+    $('.off').addEventListener('click', () => dev.power(false));
+    $('.color').addEventListener('change', (e) => dev.color(hexToRgb(e.target.value)));
+    $('.bright').addEventListener('change', (e) => dev.brightness(+e.target.value));
+
+    const keyInput = $('.apikey');
+    if (keyInput) {
+      keyInput.value = store.get(KEY_STORE);
+      $('.cloud-connect').addEventListener('click', async () => {
+        const key = keyInput.value.trim();
+        if (!key) { log('Bitte zuerst den Govee-API-Schlüssel eintragen'); return; }
+        if (dev.device && dev.device.gatt.connected) dev.device.gatt.disconnect();
+        setState(false, 'Cloud …');
+        try {
+          const json = await goveeFetch(key, '/user/devices');
+          const list = json.data || [];
+          log(`Cloud: ${list.length} Gerät(e): ${list.map(d => `${d.deviceName || '?'} (${d.sku})`).join(', ') || '–'}`);
+          const target = list.find(d => /^H6022/i.test(d.sku)) || list.find(d => /light/i.test(d.type || '')) || list[0];
+          if (!target) throw { name: 'Keine Geräte', message: 'Im Govee-Konto wurde kein Gerät gefunden' };
+          store.set(KEY_STORE, key);
+          dev.cloud = makeCloud(key, target);
+          $('.name').textContent = `${target.deviceName || target.sku} (${target.sku}) über Cloud`;
+          setState(true, 'verbunden (Cloud)');
+        } catch (e) {
+          log(`Cloud: ${errText(e)}`);
+          setState(false, 'Cloud-Fehler – siehe Protokoll');
+        }
+      });
+    }
     return dev;
   }
 
   const devices = [makeDevice(govee, 'card-govee'), makeDevice(strip, 'card-strip')];
 
   function all(on) {
-    const connected = devices.filter(d => d.char);
+    const connected = devices.filter(d => d.ready());
     if (!connected.length) { log('Noch kein Gerät verbunden'); return; }
-    connected.forEach(d => d.send(d.proto.power(on)));
+    connected.forEach(d => d.power(on));
   }
   document.getElementById('allOn').addEventListener('click', () => all(true));
   document.getElementById('allOff').addEventListener('click', () => all(false));
