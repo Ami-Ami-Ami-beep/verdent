@@ -1,0 +1,531 @@
+{
+  "title": "Demo: Claude + Remotion",
+  "accent": "#ff6a3d",
+  "audio": null,
+  "avatar": null,
+  "music": null,
+  "captions": true,
+  "scenes": [
+    {
+      "type": "title",
+      "on": "Wie machst",
+      "kicker": "Jeden Tag ein Reel",
+      "text": "Wie machst du deine Videos?"
+    },
+    {
+      "type": "chips",
+      "on": "Jeden Tag",
+      "text": "Jeden Tag.",
+      "items": [
+        {
+          "label": "Ohne Kamera",
+          "on": "Kamera"
+        },
+        {
+          "label": "Ohne Mikro",
+          "on": "Mikro"
+        }
+      ]
+    },
+    {
+      "type": "steps",
+      "on": "Du schickst",
+      "step": 1,
+      "items": [
+        {
+          "label": "Dein Thema",
+          "sub": "Du schickst Claude eine Idee"
+        },
+        {
+          "label": "Fragen"
+        },
+        {
+          "label": "Skripte"
+        },
+        {
+          "label": "Auswahl"
+        },
+        {
+          "label": "Takes"
+        },
+        {
+          "label": "Whisper"
+        },
+        {
+          "label": "Rendern"
+        }
+      ]
+    },
+    {
+      "type": "chips",
+      "on": "Claude stellt",
+      "kicker": "Schritt 2 / 7",
+      "text": "Claude fragt.",
+      "items": [
+        {
+          "label": "Für wen?",
+          "on": "Für wen"
+        },
+        {
+          "label": "Wie lang?",
+          "on": "Wie lang"
+        },
+        {
+          "label": "Welcher Ton?",
+          "on": "Welcher Ton"
+        }
+      ]
+    },
+    {
+      "type": "cards",
+      "on": "Dann schreibt",
+      "kicker": "Schritt 3 / 7",
+      "text": "Fünf Skripte.",
+      "pick": 2,
+      "pickOn": "das beste",
+      "items": [
+        {
+          "label": "Skript 1",
+          "on": "fünf"
+        },
+        {
+          "label": "Skript 2",
+          "on": "fünf"
+        },
+        {
+          "label": "Skript 3",
+          "on": "Skripte"
+        },
+        {
+          "label": "Skript 4",
+          "on": "Skripte"
+        },
+        {
+          "label": "Skript 5",
+          "on": "Skripte"
+        }
+      ]
+    },
+    {
+      "type": "wave",
+      "on": "Deine Stimme",
+      "kicker": "Schritt 5 / 7",
+      "text": "Mehrere Takes.",
+      "pick": 1,
+      "pickOn": "Takes auf",
+      "items": [
+        {
+          "label": "Take 1",
+          "on": "Stimme"
+        },
+        {
+          "label": "Take 2",
+          "on": "mehreren"
+        },
+        {
+          "label": "Take 3",
+          "on": "Takes"
+        }
+      ]
+    },
+    {
+      "type": "words",
+      "on": "Whisper schreibt",
+      "kicker": "Schritt 6 / 7 · Whisper",
+      "text": "Jedes Wort mit Zeit."
+    },
+    {
+      "type": "chips",
+      "on": "Claude baut",
+      "kicker": "Schritt 7 / 7",
+      "text": "Szene für Szene.",
+      "items": [
+        {
+          "label": "Szene 1",
+          "on": "jede"
+        },
+        {
+          "label": "Szene 2",
+          "on": "Szene"
+        },
+        {
+          "label": "Szene 3",
+          "on": "Wort"
+        }
+      ]
+    },
+    {
+      "type": "title",
+      "on": "Dann nur",
+      "kicker": "Fertig",
+      "text": "Rendern."
+    },
+    {
+      "type": "outro",
+      "on": "Dein Abend",
+      "text": "Dein Abend gehört wieder dir."
+    }
+  ],
+  "words": [
+    {
+      "text": "Wie",
+      "start": 0.3,
+      "end": 0.56
+    },
+    {
+      "text": "machst",
+      "start": 0.6,
+      "end": 1.06
+    },
+    {
+      "text": "du",
+      "start": 1.1,
+      "end": 1.293
+    },
+    {
+      "text": "deine",
+      "start": 1.333,
+      "end": 1.727
+    },
+    {
+      "text": "Videos?",
+      "start": 1.767,
+      "end": 2.227
+    },
+    {
+      "text": "Jeden",
+      "start": 2.677,
+      "end": 3.07
+    },
+    {
+      "text": "Tag.",
+      "start": 3.11,
+      "end": 3.37
+    },
+    {
+      "text": "Ohne",
+      "start": 3.82,
+      "end": 4.147
+    },
+    {
+      "text": "Kamera,",
+      "start": 4.187,
+      "end": 4.647
+    },
+    {
+      "text": "ohne",
+      "start": 4.847,
+      "end": 5.173
+    },
+    {
+      "text": "Mikro.",
+      "start": 5.213,
+      "end": 5.607
+    },
+    {
+      "text": "Du",
+      "start": 6.057,
+      "end": 6.25
+    },
+    {
+      "text": "schickst",
+      "start": 6.29,
+      "end": 6.883
+    },
+    {
+      "text": "Claude",
+      "start": 6.923,
+      "end": 7.383
+    },
+    {
+      "text": "dein",
+      "start": 7.423,
+      "end": 7.75
+    },
+    {
+      "text": "Thema.",
+      "start": 7.79,
+      "end": 8.183
+    },
+    {
+      "text": "Claude",
+      "start": 8.633,
+      "end": 9.093
+    },
+    {
+      "text": "stellt",
+      "start": 9.133,
+      "end": 9.593
+    },
+    {
+      "text": "dir",
+      "start": 9.633,
+      "end": 9.893
+    },
+    {
+      "text": "Fragen:",
+      "start": 9.933,
+      "end": 10.393
+    },
+    {
+      "text": "Für",
+      "start": 10.593,
+      "end": 10.853
+    },
+    {
+      "text": "wen?",
+      "start": 10.893,
+      "end": 11.153
+    },
+    {
+      "text": "Wie",
+      "start": 11.603,
+      "end": 11.863
+    },
+    {
+      "text": "lang?",
+      "start": 11.903,
+      "end": 12.23
+    },
+    {
+      "text": "Welcher",
+      "start": 12.68,
+      "end": 13.207
+    },
+    {
+      "text": "Ton?",
+      "start": 13.247,
+      "end": 13.507
+    },
+    {
+      "text": "Dann",
+      "start": 13.957,
+      "end": 14.283
+    },
+    {
+      "text": "schreibt",
+      "start": 14.323,
+      "end": 14.917
+    },
+    {
+      "text": "Claude",
+      "start": 14.957,
+      "end": 15.417
+    },
+    {
+      "text": "dir",
+      "start": 15.457,
+      "end": 15.717
+    },
+    {
+      "text": "fünf",
+      "start": 15.757,
+      "end": 16.083
+    },
+    {
+      "text": "Skripte,",
+      "start": 16.123,
+      "end": 16.65
+    },
+    {
+      "text": "und",
+      "start": 16.85,
+      "end": 17.11
+    },
+    {
+      "text": "du",
+      "start": 17.15,
+      "end": 17.343
+    },
+    {
+      "text": "suchst",
+      "start": 17.383,
+      "end": 17.843
+    },
+    {
+      "text": "das",
+      "start": 17.883,
+      "end": 18.143
+    },
+    {
+      "text": "beste",
+      "start": 18.183,
+      "end": 18.577
+    },
+    {
+      "text": "aus.",
+      "start": 18.617,
+      "end": 18.877
+    },
+    {
+      "text": "Deine",
+      "start": 19.327,
+      "end": 19.72
+    },
+    {
+      "text": "Stimme",
+      "start": 19.76,
+      "end": 20.22
+    },
+    {
+      "text": "nimmst",
+      "start": 20.26,
+      "end": 20.72
+    },
+    {
+      "text": "du",
+      "start": 20.76,
+      "end": 20.953
+    },
+    {
+      "text": "in",
+      "start": 20.993,
+      "end": 21.187
+    },
+    {
+      "text": "mehreren",
+      "start": 21.227,
+      "end": 21.82
+    },
+    {
+      "text": "Takes",
+      "start": 21.86,
+      "end": 22.253
+    },
+    {
+      "text": "auf.",
+      "start": 22.293,
+      "end": 22.553
+    },
+    {
+      "text": "Whisper",
+      "start": 23.003,
+      "end": 23.53
+    },
+    {
+      "text": "schreibt",
+      "start": 23.57,
+      "end": 24.163
+    },
+    {
+      "text": "die",
+      "start": 24.203,
+      "end": 24.463
+    },
+    {
+      "text": "genaue",
+      "start": 24.503,
+      "end": 24.963
+    },
+    {
+      "text": "Zeit",
+      "start": 25.003,
+      "end": 25.33
+    },
+    {
+      "text": "von",
+      "start": 25.37,
+      "end": 25.63
+    },
+    {
+      "text": "jedem",
+      "start": 25.67,
+      "end": 26.063
+    },
+    {
+      "text": "Wort",
+      "start": 26.103,
+      "end": 26.43
+    },
+    {
+      "text": "auf.",
+      "start": 26.47,
+      "end": 26.73
+    },
+    {
+      "text": "Claude",
+      "start": 27.18,
+      "end": 27.64
+    },
+    {
+      "text": "baut",
+      "start": 27.68,
+      "end": 28.007
+    },
+    {
+      "text": "jede",
+      "start": 28.047,
+      "end": 28.373
+    },
+    {
+      "text": "Szene",
+      "start": 28.413,
+      "end": 28.807
+    },
+    {
+      "text": "genau",
+      "start": 28.847,
+      "end": 29.24
+    },
+    {
+      "text": "auf",
+      "start": 29.28,
+      "end": 29.54
+    },
+    {
+      "text": "dem",
+      "start": 29.58,
+      "end": 29.84
+    },
+    {
+      "text": "Wort.",
+      "start": 29.88,
+      "end": 30.207
+    },
+    {
+      "text": "Dann",
+      "start": 30.657,
+      "end": 30.983
+    },
+    {
+      "text": "nur",
+      "start": 31.023,
+      "end": 31.283
+    },
+    {
+      "text": "noch",
+      "start": 31.323,
+      "end": 31.65
+    },
+    {
+      "text": "rendern.",
+      "start": 31.69,
+      "end": 32.217
+    },
+    {
+      "text": "Dein",
+      "start": 32.667,
+      "end": 32.993
+    },
+    {
+      "text": "Abend",
+      "start": 33.033,
+      "end": 33.427
+    },
+    {
+      "text": "gehört",
+      "start": 33.467,
+      "end": 33.927
+    },
+    {
+      "text": "wieder",
+      "start": 33.967,
+      "end": 34.427
+    },
+    {
+      "text": "dir.",
+      "start": 34.467,
+      "end": 34.727
+    }
+  ]
+}

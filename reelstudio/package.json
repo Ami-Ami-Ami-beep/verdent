@@ -1,0 +1,25 @@
+{
+  "name": "reelstudio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Claude + Remotion: Reels mit wortgenauen Animationen",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "timing": "node scripts/estimate-timing.mjs",
+    "transcribe": "node scripts/transcribe.mjs",
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.543",
+    "@remotion/renderer": "4.0.543",
+    "@remotion/bundler": "4.0.543",
+    "remotion": "4.0.543",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "typescript": "5.8.3"
+  }
+}
