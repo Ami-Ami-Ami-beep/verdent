@@ -187,7 +187,7 @@
     <div class="chip"><span>Punkte</span><b id="c-score">0</b></div>
     <div class="chip"><span>Serie</span><b id="c-streak">0</b></div>
     <div class="chip"><span>Rekord</span><b id="c-best">0</b></div>
-    <div class="chip"><span>Toasts</span><b id="c-lives">▮▮▮</b></div>
+    <div class="chip"><span>Butter unten</span><b id="c-lives">0</b></div>
   </div>
 
   <div class="stage" id="c-stage">
@@ -201,7 +201,7 @@
           <li><b>Loslassen</b> – der Toast fliegt und dreht sich.</li>
           <li><b>Nochmal tippen</b> – Drehung stoppen, wenn die Butter oben ist.</li>
         </ol>
-        <p class="muted">Jeder volle Salto bringt Punkte, perfekte Landungen zählen doppelt. Drei Toasts auf der Butterseite, dann ist Schluss.</p>
+        <p class="muted">Jeder volle Salto bringt Punkte, perfekte Landungen zählen doppelt. Butterseite unten bringt keine Punkte und beendet deine Serie. Du kannst spielen, so lange du willst.</p>
         <button id="c-startBtn" type="button">Los geht's</button>
       </div>
     </div>
@@ -477,19 +477,20 @@
     toast.spinning = false;
     squash = 1;
 
-    if (err <= 90) {
+    if (err <= 180) {
       const flips = Math.max(0, Math.round(toast.ang / TAU));
       const perfect = err <= 12;
       const wobbly = err > 35;
+      const splat = err > 90;
       const forward = idx > onIdx;
       onIdx = idx; offX = toast.x - p.x;
       toast.settleFrom = toast.ang; toast.settleTo = Math.round(toast.ang / TAU) * TAU; toast.settleT = 0;
       if (forward) {
-        const pts = wobbly ? 5 + flips * 5 : (10 + flips * 10) * (perfect ? 2 : 1);
-        addScore(pts);
-        floater((perfect ? 'Perfekt! +' : wobbly ? 'Gekippt! +' : '+') + pts, perfect ? '#ffd84a' : wobbly ? '#a9c3bd' : '#f3ead8', perfect ? 40 : 34, p.x, p.y - 90);
-        if (flips >= 2) floater(flips + '× Salto', '#d8e6e2', 22, p.x, p.y - 58);
-        perfect ? sfx.perfect() : sfx.good();
+        const pts = splat ? 0 : wobbly ? 5 + flips * 5 : (10 + flips * 10) * (perfect ? 2 : 1);
+        if (pts) addScore(pts);
+        floater(splat ? 'Butterseite unten! +0' : (perfect ? 'Perfekt! +' : wobbly ? 'Gekippt! +' : '+') + pts, splat ? '#ff6b4a' : perfect ? '#ffd84a' : wobbly ? '#a9c3bd' : '#f3ead8', splat ? 30 : perfect ? 40 : 34, p.x, p.y - 90);
+        if (flips >= 2 && !splat) floater(flips + '× Salto', '#d8e6e2', 22, p.x, p.y - 58);
+        splat ? sfx.splat() : perfect ? sfx.perfect() : sfx.good();
       } else {
         sfx.good();
       }
@@ -1094,7 +1095,7 @@
 
   // ---------- game state ----------
   let state = 'menu';    // menu | ready | charging | flying | result | serving | over
-  let score = 0, streak = 0, lives = 3;
+  let score = 0, streak = 0, lives = 3, splats = 0;
   let charge = 0, chargeT = 0;
   let timeScale = 1;
   let resultT = 0;
@@ -1111,7 +1112,7 @@
     ui.score.textContent = score;
     ui.streak.textContent = streak;
     ui.best.textContent = best;
-    ui.lives.textContent = '▮'.repeat(Math.max(0, lives)) + '▯'.repeat(Math.max(0, 3 - lives));
+    ui.lives.textContent = String(splats);
   }
 
   function resetToast() {
@@ -1120,7 +1121,7 @@
 
   function startGame() {
     audio();
-    score = 0; streak = 0; lives = 3;
+    score = 0; streak = 0; lives = 3; splats = 0;
     resetToast();
     particles.length = 0; floaters.length = 0;
     state = 'ready';
@@ -1187,13 +1188,13 @@
       toast.settleTo = Math.round(toast.ang / TAU) * TAU;
       toast.settleT = 0;
     } else if (err > 90) {
-      // butter side down
-      lives -= 1; streak = 0;
+      // butter side down: no points, streak ends, game goes on
+      splats += 1; streak = 0;
       toast.settleFrom = toast.ang;
       toast.settleTo = Math.round((toast.ang - Math.PI) / TAU) * TAU + Math.PI;
       toast.settleT = 0;
       toast.butterDown = true;
-      floater('Butterseite unten!', '#ff6b4a', 36);
+      floater('Butterseite unten! +0', '#ff6b4a', 34);
       sfx.splat();
       if (!reduceMotion) shake = 1;
       for (let i = 0; i < 30; i++) crumb(toast.x + (Math.random() - 0.5) * (TW + 40), PLATE_Y - 4, '#ffd84a', 1.4);
