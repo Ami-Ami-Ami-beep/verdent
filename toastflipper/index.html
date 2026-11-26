@@ -477,16 +477,17 @@
     toast.spinning = false;
     squash = 1;
 
-    if (err <= 35) {
+    if (err <= 90) {
       const flips = Math.max(0, Math.round(toast.ang / TAU));
       const perfect = err <= 12;
+      const wobbly = err > 35;
       const forward = idx > onIdx;
       onIdx = idx; offX = toast.x - p.x;
       toast.settleFrom = toast.ang; toast.settleTo = Math.round(toast.ang / TAU) * TAU; toast.settleT = 0;
       if (forward) {
-        const pts = (10 + flips * 10) * (perfect ? 2 : 1);
+        const pts = wobbly ? 5 + flips * 5 : (10 + flips * 10) * (perfect ? 2 : 1);
         addScore(pts);
-        floater((perfect ? 'Perfekt! +' : '+') + pts, perfect ? '#ffd84a' : '#f3ead8', perfect ? 40 : 34, p.x, p.y - 90);
+        floater((perfect ? 'Perfekt! +' : wobbly ? 'Gekippt! +' : '+') + pts, perfect ? '#ffd84a' : wobbly ? '#a9c3bd' : '#f3ead8', perfect ? 40 : 34, p.x, p.y - 90);
         if (flips >= 2) floater(flips + '× Salto', '#d8e6e2', 22, p.x, p.y - 58);
         perfect ? sfx.perfect() : sfx.good();
       } else {
@@ -1166,17 +1167,18 @@
     toast.spinning = false;
     squash = 1;
 
-    if (err <= 35) {
+    if (err <= 90) {
       if (flips < 1) {
         streak = 0;
         floater('Kein Salto!', '#a9c3bd', 38);
         sfx.drop();
       } else {
         const perfect = err <= 12;
-        const mult = 1 + Math.floor(streak / 3);
+        const wobbly = err > 35;
+        const mult = wobbly ? 1 : 1 + Math.floor(streak / 3);
         const pts = flips * (perfect ? 2 : 1) * mult;
-        score += pts; streak += 1;
-        floater((perfect ? 'Perfekt! ' : 'Gut! ') + '+' + pts, perfect ? '#ffd84a' : '#f3ead8', perfect ? 50 : 42);
+        score += pts; if (!wobbly) streak += 1;
+        floater((perfect ? 'Perfekt! ' : wobbly ? 'Gekippt! ' : 'Gut! ') + '+' + pts, perfect ? '#ffd84a' : wobbly ? '#a9c3bd' : '#f3ead8', perfect ? 50 : 42);
         if (flips >= 2) floaters.push({ text: flips + '× Salto' + (mult > 1 ? '  ·  ×' + mult : ''), color: '#a9c3bd', size: 24, x: PLATE_X, y: REST_Y - 72, life: 1.3 });
         perfect ? sfx.perfect() : sfx.good();
         for (let i = 0; i < (perfect ? 26 : 12); i++) crumb(toast.x + (Math.random() - 0.5) * TW, REST_Y - 10, perfect ? '#ffd84a' : '#d99a4e', 1.2);
