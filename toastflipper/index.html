@@ -56,7 +56,7 @@
   #lives { color: var(--butter); letter-spacing: 0.05em; }
   .stage {
     position: relative;
-    width: min(100%, calc((100dvh - 230px) * 0.75));
+    width: min(100%, calc((100dvh - 300px) * 0.75));
     min-width: min(100%, 280px);
     margin: 0 auto; aspect-ratio: 3 / 4; max-width: 100%;
     border-radius: 16px; overflow: hidden; border: 1px solid var(--line);
@@ -101,6 +101,20 @@
     background: var(--panel); border-radius: 5px; padding: 1px 5px; color: var(--fg);
   }
   @media (max-width: 420px) { .chip b { font-size: 1.05rem; } .chip { padding: 5px 8px; } }
+
+  .modes {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px;
+  }
+  .modes button {
+    font-size: 1rem; padding: 9px 10px; box-shadow: none; border-radius: 9px;
+    background: transparent; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1;
+  }
+  .modes button small { font-family: var(--f-body); font-size: 0.74rem; font-weight: 500; letter-spacing: 0; opacity: 0.85; }
+  .modes button[aria-selected="true"] { background: var(--butter); color: #3a2208; box-shadow: 0 3px 0 var(--crust); }
+  .modes button:active { transform: none; }
+  .mode { display: flex; flex-direction: column; gap: 12px; }
 </style>
 </head>
 <body>
@@ -108,9 +122,15 @@
 <div class="wrap">
   <header>
     <h1>Toast Flipper</h1>
-    <p class="tag">Der Küchen-Parcours. Butterseite oben.</p>
+    <p class="tag">Butterseite nach oben. Immer.</p>
   </header>
 
+  <div class="modes" role="tablist" aria-label="Spielmodus">
+    <button type="button" role="tab" id="tab-parcours" aria-controls="mode-parcours" data-mode="parcours">Parcours<small>Levels nach oben</small></button>
+    <button type="button" role="tab" id="tab-klassisch" aria-controls="mode-klassisch" data-mode="klassisch">Klassisch<small>Ein Teller, Highscore</small></button>
+  </div>
+
+  <section class="mode" id="mode-parcours" role="tabpanel" aria-labelledby="tab-parcours">
   <div class="hud" aria-live="polite">
     <div class="chip"><span>Level</span><b id="level">1</b></div>
     <div class="chip"><span>Punkte</span><b id="score">0</b></div>
@@ -160,8 +180,68 @@
   </div>
 
   <p class="help">Maus, Finger oder <kbd>Leertaste</kbd>: halten, loslassen, in der Luft tippen.</p>
+  </section>
+
+  <section class="mode" id="mode-klassisch" role="tabpanel" aria-labelledby="tab-klassisch" hidden>
+  <div class="hud" aria-live="polite">
+    <div class="chip"><span>Punkte</span><b id="c-score">0</b></div>
+    <div class="chip"><span>Serie</span><b id="c-streak">0</b></div>
+    <div class="chip"><span>Rekord</span><b id="c-best">0</b></div>
+    <div class="chip"><span>Toasts</span><b id="c-lives">▮▮▮</b></div>
+  </div>
+
+  <div class="stage" id="c-stage">
+    <canvas id="c-game" aria-label="Spielfeld: Toast auf einem Teller in einer Küche"></canvas>
+
+    <div class="overlay" id="c-menu">
+      <div class="card">
+        <h2>Wirf den Toast. Fang die Butter.</h2>
+        <ol>
+          <li><b>Gedrückt halten</b> – Schwung holen. Mehr Schwung heißt höher und schneller drehen.</li>
+          <li><b>Loslassen</b> – der Toast fliegt und dreht sich.</li>
+          <li><b>Nochmal tippen</b> – Drehung stoppen, wenn die Butter oben ist.</li>
+        </ol>
+        <p class="muted">Jeder volle Salto bringt Punkte, perfekte Landungen zählen doppelt. Drei Toasts auf der Butterseite, dann ist Schluss.</p>
+        <button id="c-startBtn" type="button">Los geht's</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="c-over" hidden>
+      <div class="card">
+        <h2 id="c-overTitle">Frühstück vorbei</h2>
+        <div class="big" id="c-overScore">0</div>
+        <p class="muted" id="c-overInfo">Punkte</p>
+        <button id="c-againBtn" type="button">Neuer Toast</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="help">Maus, Finger oder <kbd>Leertaste</kbd>: halten, loslassen, in der Luft tippen.</p>
+  </section>
 </div>
 
+<script>
+(() => {
+  const modes = ['parcours', 'klassisch'];
+  let initial = 'parcours';
+  try { const s = localStorage.getItem('toastflipper-mode'); if (modes.includes(s)) initial = s; } catch (e) {}
+  const h = (location.hash || '').slice(1);
+  if (modes.includes(h)) initial = h;
+  function setMode(m) {
+    window.tfMode = m;
+    for (const k of modes) {
+      document.getElementById('mode-' + k).hidden = k !== m;
+      document.getElementById('tab-' + k).setAttribute('aria-selected', String(k === m));
+    }
+    try { localStorage.setItem('toastflipper-mode', m); } catch (e) {}
+    if (location.hash.slice(1) !== m) { try { history.replaceState(null, '', '#' + m); } catch (e) {} }
+    window.dispatchEvent(new Event('resize'));
+  }
+  document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  window.addEventListener('hashchange', () => { const m = location.hash.slice(1); if (modes.includes(m) && m !== window.tfMode) setMode(m); });
+  setMode(initial);
+})();
+</script>
 <script>
 (() => {
   const W = 600, H = 800;
@@ -497,12 +577,12 @@
   window.addEventListener('pointerup', release);
   window.addEventListener('pointercancel', release);
   window.addEventListener('keydown', e => {
-    if (e.code !== 'Space') return;
+    if (e.code !== 'Space' || window.tfMode !== 'parcours') return;
     if (state === 'menu' || state === 'over' || state === 'done') return;
     e.preventDefault();
     if (!e.repeat) press();
   });
-  window.addEventListener('keyup', e => { if (e.code === 'Space' && state !== 'menu') { e.preventDefault(); release(); } });
+  window.addEventListener('keyup', e => { if (e.code === 'Space' && window.tfMode === 'parcours' && state !== 'menu') { e.preventDefault(); release(); } });
 
   $('startBtn').addEventListener('click', () => { score = 0; startLevel(1, false); });
   ui.contBtn.addEventListener('click', () => { score = 0; startLevel(savedLevel, false); });
@@ -925,8 +1005,7 @@
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    update(dt);
-    draw();
+    if (window.tfMode === 'parcours') { update(dt); draw(); }
     requestAnimationFrame(frame);
   }
 
@@ -939,6 +1018,546 @@
   updateHud();
   draw();
   if (document.fonts && document.fonts.load) document.fonts.load('24px "Bowlby One"').catch(() => {});
+  requestAnimationFrame(frame);
+})();
+</script>
+<script>
+(() => {
+  const W = 600, H = 800;
+  const G = 1025;                 // gravity px/s²
+  const PLATE_X = 300, PLATE_Y = 712;
+  const TW = 150, TT = 26;        // toast width / thickness
+  const REST_Y = PLATE_Y - 6 - TT / 2;
+  const TAU = Math.PI * 2;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const canvas = document.getElementById('c-game');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById('c-' + id);
+  const ui = { score: $('score'), streak: $('streak'), best: $('best'), lives: $('lives'),
+               menu: $('menu'), over: $('over'), overScore: $('overScore'), overInfo: $('overInfo'), overTitle: $('overTitle') };
+
+  let best = 0;
+  try { best = parseInt(localStorage.getItem('toastflipper-classic-best') || '0', 10) || 0; } catch (e) {}
+
+  // ---------- sizing ----------
+  let scale = 1, dpr = 1;
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.round(r.width * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    scale = canvas.width / W;
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- audio ----------
+  let ac = null;
+  function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(f, dur, type = 'sine', vol = 0.12, f2 = null, delay = 0) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur, vol = 0.1, freq = 1200) {
+    const a = audio(); if (!a) return;
+    const len = Math.floor(a.sampleRate * dur);
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq;
+    const g = a.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(a.destination);
+    src.start();
+  }
+  const sfx = {
+    launch: () => { noise(0.25, 0.18, 900); tone(220, 0.18, 'triangle', 0.08, 440); },
+    stop:   () => tone(900, 0.06, 'square', 0.05),
+    good:   () => { tone(523, 0.12, 'triangle', 0.12); tone(784, 0.18, 'triangle', 0.1, null, 0.08); },
+    perfect:() => { tone(659, 0.1, 'triangle', 0.12); tone(880, 0.1, 'triangle', 0.11, null, 0.07); tone(1319, 0.25, 'triangle', 0.1, null, 0.14); },
+    splat:  () => { noise(0.35, 0.3, 300); tone(140, 0.3, 'sawtooth', 0.06, 60); },
+    drop:   () => { tone(400, 0.35, 'triangle', 0.08, 120); },
+    pop:    () => { tone(300, 0.08, 'square', 0.05, 600); },
+  };
+
+  // ---------- game state ----------
+  let state = 'menu';    // menu | ready | charging | flying | result | serving | over
+  let score = 0, streak = 0, lives = 3;
+  let charge = 0, chargeT = 0;
+  let timeScale = 1;
+  let resultT = 0;
+  let shake = 0;
+  let squash = 0;
+  const toast = { x: PLATE_X, y: REST_Y, vx: 0, vy: 0, ang: 0, omega: 0, spinning: false, butterDown: false, settleFrom: 0, settleTo: 0, settleT: 1, falling: false };
+  let serveT = 0;
+  const particles = [];
+  const floaters = [];
+  let stopRing = 0;
+  let pendingOutcome = null;
+
+  function updateHud() {
+    ui.score.textContent = score;
+    ui.streak.textContent = streak;
+    ui.best.textContent = best;
+    ui.lives.textContent = '▮'.repeat(Math.max(0, lives)) + '▯'.repeat(Math.max(0, 3 - lives));
+  }
+
+  function resetToast() {
+    Object.assign(toast, { x: PLATE_X, y: REST_Y, vx: 0, vy: 0, ang: 0, omega: 0, spinning: false, butterDown: false, settleT: 1, falling: false });
+  }
+
+  function startGame() {
+    audio();
+    score = 0; streak = 0; lives = 3;
+    resetToast();
+    particles.length = 0; floaters.length = 0;
+    state = 'ready';
+    ui.menu.hidden = true; ui.over.hidden = true;
+    updateHud();
+  }
+
+  function spinBoost() { return 1 + Math.min(streak, 15) * 0.035; }
+
+  function launch() {
+    const c = charge;
+    const T = 0.9 + 1.3 * c;                 // airtime in seconds
+    toast.vy = -G * T / 2;
+    toast.vx = 0;
+    toast.omega = (1.25 + 1.45 * c) * spinBoost() * TAU;
+    toast.spinning = true;
+    toast.ang = 0;
+    state = 'flying';
+    timeScale = 1;
+    sfx.launch();
+    for (let i = 0; i < 10; i++) crumb(toast.x + (Math.random() - 0.5) * TW, REST_Y + 8, '#c98a45');
+  }
+
+  function stopSpin() {
+    toast.spinning = false;
+    stopRing = 1;
+    sfx.stop();
+  }
+
+  function crumb(x, y, color, speed = 1) {
+    particles.push({ x, y, vx: (Math.random() - 0.5) * 260 * speed, vy: (-Math.random() * 260 - 60) * speed, life: 0.7 + Math.random() * 0.5, max: 1.2, color, r: 2 + Math.random() * 3 });
+  }
+
+  function floater(text, color, size = 44) {
+    floaters.push({ text, color, size, x: PLATE_X, y: REST_Y - 120, life: 1.3 });
+  }
+
+  function land() {
+    const a = ((toast.ang % TAU) + TAU) % TAU;
+    const errRad = Math.min(a, TAU - a);
+    const err = errRad * 180 / Math.PI;
+    const flips = Math.round(toast.ang / TAU);
+    toast.y = REST_Y; toast.vy = 0;
+    toast.spinning = false;
+    squash = 1;
+
+    if (err <= 35) {
+      if (flips < 1) {
+        streak = 0;
+        floater('Kein Salto!', '#a9c3bd', 38);
+        sfx.drop();
+      } else {
+        const perfect = err <= 12;
+        const mult = 1 + Math.floor(streak / 3);
+        const pts = flips * (perfect ? 2 : 1) * mult;
+        score += pts; streak += 1;
+        floater((perfect ? 'Perfekt! ' : 'Gut! ') + '+' + pts, perfect ? '#ffd84a' : '#f3ead8', perfect ? 50 : 42);
+        if (flips >= 2) floaters.push({ text: flips + '× Salto' + (mult > 1 ? '  ·  ×' + mult : ''), color: '#a9c3bd', size: 24, x: PLATE_X, y: REST_Y - 72, life: 1.3 });
+        perfect ? sfx.perfect() : sfx.good();
+        for (let i = 0; i < (perfect ? 26 : 12); i++) crumb(toast.x + (Math.random() - 0.5) * TW, REST_Y - 10, perfect ? '#ffd84a' : '#d99a4e', 1.2);
+      }
+      toast.settleFrom = toast.ang;
+      toast.settleTo = Math.round(toast.ang / TAU) * TAU;
+      toast.settleT = 0;
+    } else if (err > 90) {
+      // butter side down
+      lives -= 1; streak = 0;
+      toast.settleFrom = toast.ang;
+      toast.settleTo = Math.round((toast.ang - Math.PI) / TAU) * TAU + Math.PI;
+      toast.settleT = 0;
+      toast.butterDown = true;
+      floater('Butterseite unten!', '#ff6b4a', 36);
+      sfx.splat();
+      if (!reduceMotion) shake = 1;
+      for (let i = 0; i < 30; i++) crumb(toast.x + (Math.random() - 0.5) * (TW + 40), PLATE_Y - 4, '#ffd84a', 1.4);
+    } else {
+      // lands on an edge and slides off
+      lives -= 1; streak = 0;
+      toast.falling = true;
+      const dir = (a < Math.PI) ? 1 : -1;
+      toast.vx = 300 * dir;
+      toast.vy = -260;
+      toast.omega = 5 * dir;
+      toast.spinning = true;
+      floater('Abgerutscht!', '#ff6b4a', 40);
+      sfx.drop();
+      if (!reduceMotion) shake = 0.6;
+    }
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem('toastflipper-classic-best', String(best)); } catch (e) {}
+    }
+    updateHud();
+    state = 'result';
+    resultT = 0;
+  }
+
+  function nextToast() {
+    if (lives <= 0) {
+      state = 'over';
+      ui.overTitle.textContent = score >= best && score > 0 ? 'Neuer Rekord!' : 'Frühstück vorbei';
+      ui.overScore.textContent = score;
+      ui.overInfo.textContent = 'Punkte · Rekord ' + best;
+      ui.over.hidden = false;
+      setTimeout(() => $('againBtn').focus(), 50);
+      return;
+    }
+    state = 'serving';
+    serveT = 0;
+    resetToast();
+    sfx.pop();
+  }
+
+  // ---------- input ----------
+  function press() {
+    if (state === 'ready') { state = 'charging'; chargeT = 0; charge = 0; audio(); }
+    else if (state === 'flying' && toast.spinning) stopSpin();
+  }
+  function release() {
+    if (state === 'charging') launch();
+  }
+  canvas.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+  window.addEventListener('keydown', e => {
+    if (e.code !== 'Space' || window.tfMode !== 'klassisch') return;
+    if (state === 'menu' || state === 'over') return;
+    e.preventDefault();
+    if (!e.repeat) press();
+  });
+  window.addEventListener('keyup', e => { if (e.code === 'Space' && window.tfMode === 'klassisch') { e.preventDefault(); release(); } });
+  $('startBtn').addEventListener('click', startGame);
+  $('againBtn').addEventListener('click', startGame);
+
+  // ---------- update ----------
+  function update(rdt) {
+    let target = 1;
+    if (state === 'flying' && toast.vy > 0 && toast.y > REST_Y - 230 && toast.spinning) target = 0.5;
+    timeScale += (target - timeScale) * Math.min(1, rdt * 10);
+    const dt = rdt * timeScale;
+
+    if (state === 'charging') {
+      chargeT += rdt / 0.8;
+      const p = chargeT % 2;
+      charge = p < 1 ? p : 2 - p;
+    }
+
+    if (state === 'flying') {
+      toast.vy += G * dt;
+      toast.y += toast.vy * dt;
+      if (toast.spinning) toast.ang += toast.omega * dt;
+      if (toast.vy > 0 && toast.y >= REST_Y) land();
+    }
+
+    if (state === 'result') {
+      resultT += rdt;
+      if (toast.falling) {
+        toast.vy += G * rdt;
+        toast.x += toast.vx * rdt;
+        toast.y += toast.vy * rdt;
+        toast.ang += toast.omega * rdt;
+      } else if (toast.settleT < 1) {
+        toast.settleT = Math.min(1, toast.settleT + rdt / 0.18);
+        const k = 1 - Math.pow(1 - toast.settleT, 3);
+        toast.ang = toast.settleFrom + (toast.settleTo - toast.settleFrom) * k;
+      }
+      if (resultT > 1.35) nextToast();
+    }
+
+    if (state === 'serving') {
+      serveT = Math.min(1, serveT + rdt / 0.6);
+      const t = serveT;
+      const sx = 100, sy = 588;
+      toast.x = sx + (PLATE_X - sx) * t;
+      toast.y = sy + (REST_Y - sy) * t - Math.sin(Math.PI * t) * 190;
+      toast.ang = (1 - t) * -0.6;
+      if (serveT >= 1) { resetToast(); squash = 0.6; state = 'ready'; }
+    }
+
+    squash = Math.max(0, squash - rdt * 4);
+    shake = Math.max(0, shake - rdt * 2.5);
+    stopRing = Math.max(0, stopRing - rdt * 2.5);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vy += G * 0.9 * rdt; p.x += p.vx * rdt; p.y += p.vy * rdt; p.life -= rdt;
+      if (p.y > PLATE_Y + 4 && p.vy > 0) { p.y = PLATE_Y + 4; p.vy *= -0.3; p.vx *= 0.6; }
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      const f = floaters[i];
+      f.life -= rdt; f.y -= 40 * rdt;
+      if (f.life <= 0) floaters.splice(i, 1);
+    }
+  }
+
+  // ---------- drawing ----------
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  let bgCache = null;
+  function drawBackground() {
+    if (!bgCache) {
+      bgCache = document.createElement('canvas');
+      bgCache.width = W; bgCache.height = H;
+      const b = bgCache.getContext('2d');
+      // backsplash
+      const wall = b.createLinearGradient(0, 0, 0, 740);
+      wall.addColorStop(0, '#1d5a57'); wall.addColorStop(1, '#2a7470');
+      b.fillStyle = wall; b.fillRect(0, 0, W, 740);
+      const s = 60;
+      for (let y = 0; y < 740; y += s) {
+        for (let x = 0; x < W; x += s) {
+          b.fillStyle = 'rgba(255,255,255,0.05)';
+          b.fillRect(x + 3, y + 3, s - 6, s - 6);
+          b.fillStyle = 'rgba(255,255,255,0.08)';
+          b.fillRect(x + 6, y + 6, s - 22, 4);
+        }
+      }
+      b.strokeStyle = 'rgba(8,36,34,0.55)'; b.lineWidth = 3;
+      for (let y = 0; y <= 740; y += s) { b.beginPath(); b.moveTo(0, y); b.lineTo(W, y); b.stroke(); }
+      for (let x = 0; x <= W; x += s) { b.beginPath(); b.moveTo(x, 0); b.lineTo(x, 740); b.stroke(); }
+      // window light
+      const lg = b.createRadialGradient(470, 80, 10, 470, 80, 420);
+      lg.addColorStop(0, 'rgba(255,236,170,0.22)'); lg.addColorStop(1, 'rgba(255,236,170,0)');
+      b.fillStyle = lg; b.fillRect(0, 0, W, 740);
+      // counter
+      b.fillStyle = '#e8dcc4'; b.fillRect(0, 724, W, 18);
+      b.fillStyle = '#c9b996'; b.fillRect(0, 740, W, 4);
+      const cab = b.createLinearGradient(0, 744, 0, H);
+      cab.addColorStop(0, '#b4472f'); cab.addColorStop(1, '#8e3422');
+      b.fillStyle = cab; b.fillRect(0, 744, W, H - 744);
+      b.strokeStyle = 'rgba(0,0,0,0.25)'; b.lineWidth = 2;
+      b.beginPath(); b.moveTo(W / 2, 750); b.lineTo(W / 2, H); b.stroke();
+      b.fillStyle = '#e9d9b6';
+      rr2(b, W / 2 - 40, 764, 26, 6, 3); b.fill();
+      rr2(b, W / 2 + 14, 764, 26, 6, 3); b.fill();
+      // toaster
+      b.fillStyle = 'rgba(0,0,0,0.25)';
+      b.beginPath(); b.ellipse(100, 726, 82, 8, 0, 0, TAU); b.fill();
+      const chrome = b.createLinearGradient(25, 0, 175, 0);
+      chrome.addColorStop(0, '#7f8a8c'); chrome.addColorStop(0.18, '#eef3f3'); chrome.addColorStop(0.4, '#a9b4b6');
+      chrome.addColorStop(0.7, '#dfe6e6'); chrome.addColorStop(1, '#6d7779');
+      b.fillStyle = chrome; rr2(b, 25, 600, 150, 124, 26); b.fill();
+      b.fillStyle = '#2b2f30'; rr2(b, 52, 596, 96, 10, 5); b.fill();
+      b.fillStyle = '#3c3f40'; rr2(b, 168, 650, 18, 10, 4); b.fill();
+      b.fillStyle = '#e8dcc4'; b.fillRect(45, 700, 110, 4);
+      b.fillStyle = 'rgba(255,255,255,0.6)'; rr2(b, 40, 614, 10, 70, 5); b.fill();
+      // little dial
+      b.fillStyle = '#2b2f30'; b.beginPath(); b.arc(100, 672, 9, 0, TAU); b.fill();
+      b.strokeStyle = '#ffd84a'; b.lineWidth = 2; b.beginPath(); b.moveTo(100, 672); b.lineTo(105, 665); b.stroke();
+      // butter dish
+      b.fillStyle = 'rgba(0,0,0,0.22)';
+      b.beginPath(); b.ellipse(510, 726, 62, 6, 0, 0, TAU); b.fill();
+      b.fillStyle = '#f4f1ea'; rr2(b, 452, 708, 116, 16, 6); b.fill();
+      b.fillStyle = '#ffd84a'; rr2(b, 478, 684, 64, 26, 4); b.fill();
+      b.fillStyle = '#ffe98a'; b.fillRect(482, 688, 56, 5);
+      b.fillStyle = '#f1c22c'; b.fillRect(478, 704, 64, 6);
+    }
+    ctx.drawImage(bgCache, 0, 0);
+  }
+  function rr2(b, x, y, w, h, r) {
+    b.beginPath();
+    b.moveTo(x + r, y);
+    b.arcTo(x + w, y, x + w, y + h, r);
+    b.arcTo(x + w, y + h, x, y + h, r);
+    b.arcTo(x, y + h, x, y, r);
+    b.arcTo(x, y, x + w, y, r);
+    b.closePath();
+  }
+
+  function drawPlate() {
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y + 16, 128, 9, 0, 0, TAU); ctx.fill();
+    // toast shadow on plate grows as toast comes down
+    const h = Math.max(0, REST_Y - toast.y);
+    const k = Math.max(0.25, 1 - h / 700);
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.18 * k).toFixed(3) + ')';
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y + 2, 70 * k + 10, 6 * k, 0, 0, TAU); ctx.fill();
+    // plate body
+    ctx.fillStyle = '#d9d6ce';
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y + 6, 122, 15, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fbfaf6';
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y, 122, 14, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#2a7470'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y, 108, 11, 0, 0, TAU); ctx.stroke();
+    ctx.fillStyle = '#efece4';
+    ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y + 1, 78, 7, 0, 0, TAU); ctx.fill();
+  }
+
+  function drawToast() {
+    ctx.save();
+    ctx.translate(toast.x, toast.y);
+    ctx.rotate(toast.ang);
+    let sx = 1, sy = 1;
+    if (state === 'charging') { sx = 1 + charge * 0.08; sy = 1 - charge * 0.22; ctx.translate(0, charge * 3); }
+    if (squash > 0) { const s = Math.sin(squash * Math.PI) * 0.18; sx += s; sy -= s; }
+    ctx.scale(sx, sy);
+
+    const hw = TW / 2, ht = TT / 2;
+    // crust
+    ctx.fillStyle = '#9a5523';
+    rr(-hw, -ht, TW, TT, 9); ctx.fill();
+    // crumb
+    const g = ctx.createLinearGradient(0, -ht, 0, ht);
+    g.addColorStop(0, '#f0c27c'); g.addColorStop(1, '#d69447');
+    ctx.fillStyle = g;
+    rr(-hw + 6, -ht + 4, TW - 12, TT - 8, 5); ctx.fill();
+    // pores
+    ctx.fillStyle = 'rgba(140,78,30,0.45)';
+    const pores = [[-50, 1], [-28, -3], [-8, 3], [14, -2], [36, 2], [54, -1], [-40, -1], [26, 4]];
+    for (const [px, py] of pores) { ctx.beginPath(); ctx.ellipse(px, py, 2.6, 1.6, 0, 0, TAU); ctx.fill(); }
+    // butter on top face
+    ctx.fillStyle = '#ffd84a';
+    ctx.beginPath();
+    ctx.moveTo(-hw + 8, -ht + 1);
+    ctx.lineTo(-hw + 10, -ht - 6);
+    ctx.quadraticCurveTo(0, -ht - 10, hw - 10, -ht - 6);
+    ctx.lineTo(hw - 8, -ht + 1);
+    // drips
+    ctx.lineTo(30, -ht + 1);
+    ctx.quadraticCurveTo(26, -ht + 9, 22, -ht + 1);
+    ctx.lineTo(-24, -ht + 1);
+    ctx.quadraticCurveTo(-29, -ht + 12, -34, -ht + 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(-20, -ht - 6, 18, 1.8, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawMeter() {
+    const x = 560, y0 = 180, h = 360, w = 18;
+    ctx.fillStyle = 'rgba(8,36,34,0.55)';
+    rr(x - 4, y0 - 4, w + 8, h + 8, 12); ctx.fill();
+    const c = state === 'charging' ? charge : 0;
+    const fh = h * c;
+    const g = ctx.createLinearGradient(0, y0 + h, 0, y0);
+    g.addColorStop(0, '#ffd84a'); g.addColorStop(0.7, '#ffb347'); g.addColorStop(1, '#ff6b4a');
+    ctx.fillStyle = g;
+    if (fh > 1) { rr(x, y0 + h - fh, w, fh, 8); ctx.fill(); }
+    ctx.fillStyle = 'rgba(243,234,216,0.7)';
+    ctx.font = '13px "DM Sans", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Schwung', x + w / 2, y0 + h + 24);
+  }
+
+  function drawTopText() {
+    ctx.textAlign = 'center';
+    if (state === 'flying') {
+      const flips = Math.floor(toast.ang / TAU);
+      ctx.font = '28px "Bowlby One", "Arial Black", sans-serif';
+      ctx.fillStyle = 'rgba(243,234,216,0.92)';
+      ctx.fillText(flips === 1 ? '1 Salto' : flips + ' Salti', W / 2, 60);
+      ctx.font = '15px "DM Sans", system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(243,234,216,0.7)';
+      ctx.fillText(toast.spinning ? 'Tippen zum Stoppen' : 'Gestoppt', W / 2, 86);
+    } else if (state === 'ready') {
+      ctx.font = '22px "Bowlby One", "Arial Black", sans-serif';
+      ctx.fillStyle = 'rgba(243,234,216,0.9)';
+      ctx.fillText('Halten zum Schwung holen', W / 2, 60);
+      if (streak >= 3) {
+        ctx.font = '15px "DM Sans", system-ui, sans-serif';
+        ctx.fillStyle = '#ffd84a';
+        ctx.fillText('Serie ×' + (1 + Math.floor(streak / 3)) + ' · Toast dreht schneller', W / 2, 86);
+      }
+    } else if (state === 'charging') {
+      ctx.font = '22px "Bowlby One", "Arial Black", sans-serif';
+      ctx.fillStyle = 'rgba(243,234,216,0.9)';
+      ctx.fillText('Loslassen zum Werfen', W / 2, 60);
+    }
+  }
+
+  function draw() {
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
+    drawBackground();
+    drawMeter();
+    drawPlate();
+
+    // butter splat under toast
+    if (toast.butterDown && state === 'result') {
+      ctx.fillStyle = 'rgba(255,216,74,0.85)';
+      ctx.beginPath(); ctx.ellipse(PLATE_X, PLATE_Y, 90, 8, 0, 0, TAU); ctx.fill();
+    }
+    drawToast();
+
+    if (stopRing > 0) {
+      ctx.strokeStyle = 'rgba(255,216,74,' + stopRing.toFixed(3) + ')';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(toast.x, toast.y, 90 + (1 - stopRing) * 50, 0, TAU); ctx.stroke();
+    }
+
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 0.4));
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r);
+    }
+    ctx.globalAlpha = 1;
+
+    drawTopText();
+
+    ctx.textAlign = 'center';
+    for (const f of floaters) {
+      ctx.globalAlpha = Math.min(1, f.life / 0.4);
+      ctx.font = f.size + 'px "Bowlby One", "Arial Black", sans-serif';
+      ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(15,43,42,0.85)';
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (window.tfMode === 'klassisch') { update(dt); draw(); }
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  updateHud();
+  draw();
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('28px "Bowlby One"').catch(() => {});
+  }
   requestAnimationFrame(frame);
 })();
 </script>
